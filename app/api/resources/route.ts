@@ -14,10 +14,26 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'date'
     const sortOrder = searchParams.get('sortOrder') || 'desc'
     
-    // Validate sortBy parameter
-    const validSortFields = ['date', 'title', 'submitted_by', 'created_at']
-    const safeSortBy = validSortFields.includes(sortBy) ? sortBy : 'date'
-    const safeSortOrder = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC'
+    // Validate sortBy parameter and create ORDER BY clause
+    let orderByClause
+    if (sortBy === 'title') {
+      orderByClause = sortOrder.toLowerCase() === 'asc' 
+        ? sql`ORDER BY r.title ASC`
+        : sql`ORDER BY r.title DESC`
+    } else if (sortBy === 'submitted_by') {
+      orderByClause = sortOrder.toLowerCase() === 'asc' 
+        ? sql`ORDER BY r.submitted_by ASC`
+        : sql`ORDER BY r.submitted_by DESC`
+    } else if (sortBy === 'created_at') {
+      orderByClause = sortOrder.toLowerCase() === 'asc' 
+        ? sql`ORDER BY r.created_at ASC`
+        : sql`ORDER BY r.created_at DESC`
+    } else {
+      // Default to date
+      orderByClause = sortOrder.toLowerCase() === 'asc' 
+        ? sql`ORDER BY r.date ASC`
+        : sql`ORDER BY r.date DESC`
+    }
     
     let resources
     
@@ -41,7 +57,7 @@ export async function GET(request: NextRequest) {
           WHERE t2.name = ANY(${tags})
         )
         GROUP BY r.id, r.date, r.title, r.submitted_by, r.created_at
-        ORDER BY r.${sql(safeSortBy)} ${sql.unsafe(safeSortOrder)}
+        ${orderByClause}
       `
     } else {
       // Query without tag filtering
@@ -57,7 +73,7 @@ export async function GET(request: NextRequest) {
         LEFT JOIN resource_tags rt ON r.id = rt.resource_id
         LEFT JOIN tags t ON rt.tag_id = t.id
         GROUP BY r.id, r.date, r.title, r.submitted_by, r.created_at
-        ORDER BY r.${sql(safeSortBy)} ${sql.unsafe(safeSortOrder)}
+        ${orderByClause}
       `
     }
     
