@@ -85,7 +85,7 @@ export function ResourceCard({ resource, showActions = false, onEdit, onDelete }
         <div className="mb-4">
           {resource.tags.map((tag) => (
             <span
-              key={tag.id}
+              key={tag.tag_id}
               className={combineStyles(
                 resourceStyles.tag.padding,
                 resourceStyles.tag.borderRadius,
@@ -94,12 +94,13 @@ export function ResourceCard({ resource, showActions = false, onEdit, onDelete }
                 resourceStyles.tag.margin
               )}
               style={{ 
-                backgroundColor: `${tag.color}20`, 
-                color: tag.color,
-                border: `1px solid ${tag.color}40`
+                backgroundColor: `${tag.effective_color}20`, 
+                color: tag.effective_color,
+                border: `1px solid ${tag.effective_color}40`
               }}
+              title={tag.full_path}
             >
-              {tag.name}
+              {tag.tag_name}
             </span>
           ))}
         </div>

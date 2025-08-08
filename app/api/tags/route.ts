@@ -3,63 +3,69 @@ import { sql } from '@/lib/db'
 
 export async function GET() {
   try {
-    // Get all tags with their hierarchy information
-    const tags = await sql`
-      SELECT id, name, color, parent_id, category_level, sort_order, created_at
-      FROM tags 
-      ORDER BY category_level, sort_order, name
+    // Get the complete hierarchy using the view
+    const hierarchyData = await sql`
+      SELECT * FROM complete_tag_hierarchy 
+      WHERE tag_id IS NOT NULL
+      ORDER BY category_name, sub_category_name, tag_name
     `
     
-    // Build the hierarchy: Categories -> Subcategories -> Tags
-    const hierarchy = {}
+    // Build the hierarchy structure
+    const hierarchy: any = {}
     
-    // First pass: Create categories (level 1)
-    tags.forEach(tag => {
-      if (tag.category_level === 1) {
-        hierarchy[tag.name] = {
-          ...tag,
+    hierarchyData.forEach((row) => {
+      const categoryName = row.category_name
+      const subCategoryName = row.sub_category_name
+      
+      // Initialize category if it doesn't exist
+      if (!hierarchy[categoryName]) {
+        hierarchy[categoryName] = {
+          id: row.category_id,
+          name: row.category_name,
+          slug: row.category_slug,
+          color: row.category_color,
+          icon: null,
           subcategories: {}
         }
       }
-    })
-    
-    // Second pass: Create subcategories (level 2)
-    tags.forEach(tag => {
-      if (tag.category_level === 2 && tag.parent_id) {
-        const parentCategory = tags.find(t => t.id === tag.parent_id)
-        if (parentCategory && hierarchy[parentCategory.name]) {
-          hierarchy[parentCategory.name].subcategories[tag.name] = {
-            ...tag,
-            tags: []
-          }
+      
+      // Initialize subcategory if it doesn't exist
+      if (subCategoryName && !hierarchy[categoryName].subcategories[subCategoryName]) {
+        hierarchy[categoryName].subcategories[subCategoryName] = {
+          id: row.sub_category_id,
+          name: row.sub_category_name,
+          slug: row.sub_category_slug,
+          color: row.effective_color,
+          icon: null,
+          tags: []
         }
+      }
+      
+      // Add the tag
+      if (subCategoryName) {
+        hierarchy[categoryName].subcategories[subCategoryName].tags.push({
+          id: row.tag_id,
+          name: row.tag_name,
+          slug: row.tag_slug,
+          color: row.effective_color,
+          category_id: row.category_id,
+          sub_category_id: row.sub_category_id
+        })
       }
     })
     
-    // Third pass: Add tags (level 3+) to their subcategories
-    tags.forEach(tag => {
-      if (tag.category_level >= 3 && tag.parent_id) {
-        // Find the subcategory this tag belongs to
-        const parentTag = tags.find(t => t.id === tag.parent_id)
-        if (parentTag) {
-          // Find the root category
-          let currentParent = parentTag
-          while (currentParent && currentParent.category_level > 2) {
-            currentParent = tags.find(t => t.id === currentParent.parent_id)
-          }
-          
-          if (currentParent && currentParent.category_level === 2) {
-            const grandParent = tags.find(t => t.id === currentParent.parent_id)
-            if (grandParent && hierarchy[grandParent.name] && hierarchy[grandParent.name].subcategories[currentParent.name]) {
-              hierarchy[grandParent.name].subcategories[currentParent.name].tags.push(tag)
-            }
-          }
-        }
-      }
-    })
+    // Also get flat list of all tags for backward compatibility
+    const flatTags = await sql`
+      SELECT 
+        id, name, slug, color, category_id, sub_category_id,
+        sort_order, is_active, created_at, updated_at
+      FROM tag_tags 
+      WHERE is_active = true
+      ORDER BY name
+    `
     
     return NextResponse.json({
-      flat: tags,
+      flat: flatTags,
       hierarchy: hierarchy
     })
   } catch (error) {
@@ -70,11 +76,14 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, color } = await request.json()
+    const { name, color, category_id, sub_category_id } = await request.json()
+    
+    // Generate slug from name
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
     
     const [tag] = await sql`
-      INSERT INTO tags (name, color)
-      VALUES (${name}, ${color})
+      INSERT INTO tag_tags (name, slug, category_id, sub_category_id, color)
+      VALUES (${name}, ${slug}, ${category_id}, ${sub_category_id || null}, ${color})
       RETURNING *
     `
     
