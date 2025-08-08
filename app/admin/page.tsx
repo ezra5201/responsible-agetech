@@ -17,6 +17,8 @@ export default function AdminPage() {
   const [isResourceDialogOpen, setIsResourceDialogOpen] = useState(false)
   const [isTagDialogOpen, setIsTagDialogOpen] = useState(false)
   const [editingResource, setEditingResource] = useState<ResourceWithTags | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchResources()
@@ -25,21 +27,65 @@ export default function AdminPage() {
 
   const fetchResources = async () => {
     try {
+      setLoading(true)
+      setError(null)
+      
       const response = await fetch('/api/resources')
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`HTTP ${response.status}: ${errorText}`)
+      }
+      
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text()
+        console.error('Non-JSON response:', text)
+        throw new Error('Server returned non-JSON response')
+      }
+      
       const data = await response.json()
-      setResources(data)
+      
+      if (data.error) {
+        throw new Error(data.error)
+      }
+      
+      // Ensure data is an array
+      if (Array.isArray(data)) {
+        setResources(data)
+      } else {
+        console.error('API returned non-array data:', data)
+        setResources([])
+        setError('Invalid data format received from server')
+      }
     } catch (error) {
       console.error('Error fetching resources:', error)
+      setError(error instanceof Error ? error.message : 'Failed to fetch resources')
+      setResources([]) // Ensure resources is always an array
+    } finally {
+      setLoading(false)
     }
   }
 
   const fetchTags = async () => {
     try {
       const response = await fetch('/api/tags')
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+      
       const data = await response.json()
-      setTags(data)
+      
+      if (Array.isArray(data)) {
+        setTags(data)
+      } else {
+        console.error('Tags API returned non-array:', data)
+        setTags([])
+      }
     } catch (error) {
       console.error('Error fetching tags:', error)
+      setTags([]) // Ensure tags is always an array
     }
   }
 
@@ -61,17 +107,22 @@ export default function AdminPage() {
       
       const method = editingResource ? 'PUT' : 'POST'
 
-      await fetch(url, {
+      const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
 
       setIsResourceDialogOpen(false)
       setEditingResource(null)
       fetchResources()
     } catch (error) {
       console.error('Error saving resource:', error)
+      alert('Failed to save resource. Please try again.')
     }
   }
 
@@ -79,10 +130,16 @@ export default function AdminPage() {
     if (!confirm('Are you sure you want to delete this resource?')) return
 
     try {
-      await fetch(`/api/resources/${id}`, { method: 'DELETE' })
+      const response = await fetch(`/api/resources/${id}`, { method: 'DELETE' })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+      
       fetchResources()
     } catch (error) {
       console.error('Error deleting resource:', error)
+      alert('Failed to delete resource. Please try again.')
     }
   }
 
@@ -93,17 +150,66 @@ export default function AdminPage() {
         color: formData.get('color')
       }
 
-      await fetch('/api/tags', {
+      const response = await fetch('/api/tags', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       })
 
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+
       setIsTagDialogOpen(false)
       fetchTags()
     } catch (error) {
       console.error('Error creating tag:', error)
+      alert('Failed to create tag. Please try again.')
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p>Loading admin panel...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+            <h2 className="text-lg font-semibold text-red-800 mb-2">Error Loading Admin Panel</h2>
+            <p className="text-red-600 mb-4">{error}</p>
+            <button 
+              onClick={() => {
+                setError(null)
+                fetchResources()
+                fetchTags()
+              }}
+              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+            >
+              Try Again
+            </button>
+            <div className="mt-4 text-sm text-red-500">
+              <p>Make sure you have:</p>
+              <ul className="list-disc list-inside mt-2">
+                <li>Set up the DATABASE_URL environment variable</li>
+                <li>Run the database setup scripts</li>
+                <li>Deployed to a platform that supports server-side functions</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -136,7 +242,7 @@ export default function AdminPage() {
                 </form>
                 
                 <div className="mt-6">
-                  <h3 className="font-medium mb-3">Existing Tags</h3>
+                  <h3 className="font-medium mb-3">Existing Tags ({tags.length})</h3>
                   <div className="flex flex-wrap gap-2">
                     {tags.map((tag) => (
                       <span
@@ -152,6 +258,9 @@ export default function AdminPage() {
                       </span>
                     ))}
                   </div>
+                  {tags.length === 0 && (
+                    <p className="text-gray-500 text-sm">No tags created yet.</p>
+                  )}
                 </div>
               </DialogContent>
             </Dialog>
@@ -254,6 +363,11 @@ export default function AdminPage() {
                         </div>
                       ))}
                     </div>
+                    {tags.length === 0 && (
+                      <p className="text-sm text-gray-500 mt-2">
+                        No tags available. Create some tags first using "Manage Tags".
+                      </p>
+                    )}
                   </div>
                   
                   <Button type="submit">
@@ -265,6 +379,7 @@ export default function AdminPage() {
           </div>
         </div>
 
+        {/* Resources Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {resources.map((resource) => (
             <ResourceCard
@@ -280,9 +395,16 @@ export default function AdminPage() {
           ))}
         </div>
 
-        {resources.length === 0 && (
+        {resources.length === 0 && !loading && !error && (
           <div className="text-center py-12">
-            <p className="text-gray-500">No resources yet. Add your first resource!</p>
+            <div className="bg-white rounded-lg shadow-sm border p-8">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Resources Yet</h3>
+              <p className="text-gray-500 mb-4">Get started by adding your first resource!</p>
+              <Button onClick={() => setIsResourceDialogOpen(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Your First Resource
+              </Button>
+            </div>
           </div>
         )}
       </div>
