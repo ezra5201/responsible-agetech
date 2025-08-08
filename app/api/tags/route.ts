@@ -5,46 +5,62 @@ export async function GET() {
   try {
     // Get all tags with their hierarchy information
     const tags = await sql`
-      WITH RECURSIVE tag_hierarchy AS (
-        -- Base case: root categories (level 1)
-        SELECT id, name, color, parent_id, category_level, sort_order, 
-               ARRAY[name::varchar] as path, name as root_category
-        FROM tags 
-        WHERE parent_id IS NULL
-        
-        UNION ALL
-        
-        -- Recursive case: child tags
-        SELECT t.id, t.name, t.color, t.parent_id, t.category_level, t.sort_order,
-               th.path || t.name::varchar, th.root_category
-        FROM tags t
-        JOIN tag_hierarchy th ON t.parent_id = th.id
-      )
-      SELECT * FROM tag_hierarchy 
-      ORDER BY root_category, category_level, sort_order, name
+      SELECT id, name, color, parent_id, category_level, sort_order, created_at
+      FROM tags 
+      ORDER BY category_level, sort_order, name
     `
     
-    // Group tags by category for easier frontend consumption
-    const categorizedTags = tags.reduce((acc, tag) => {
+    // Build the hierarchy: Categories -> Subcategories -> Tags
+    const hierarchy = {}
+    
+    // First pass: Create categories (level 1)
+    tags.forEach(tag => {
       if (tag.category_level === 1) {
-        // This is a main category
-        acc[tag.name] = {
+        hierarchy[tag.name] = {
           ...tag,
-          children: []
-        }
-      } else {
-        // This is a subcategory or tag
-        const rootCategory = tag.root_category
-        if (acc[rootCategory]) {
-          acc[rootCategory].children.push(tag)
+          subcategories: {}
         }
       }
-      return acc
-    }, {})
+    })
+    
+    // Second pass: Create subcategories (level 2)
+    tags.forEach(tag => {
+      if (tag.category_level === 2 && tag.parent_id) {
+        const parentCategory = tags.find(t => t.id === tag.parent_id)
+        if (parentCategory && hierarchy[parentCategory.name]) {
+          hierarchy[parentCategory.name].subcategories[tag.name] = {
+            ...tag,
+            tags: []
+          }
+        }
+      }
+    })
+    
+    // Third pass: Add tags (level 3+) to their subcategories
+    tags.forEach(tag => {
+      if (tag.category_level >= 3 && tag.parent_id) {
+        // Find the subcategory this tag belongs to
+        const parentTag = tags.find(t => t.id === tag.parent_id)
+        if (parentTag) {
+          // Find the root category
+          let currentParent = parentTag
+          while (currentParent && currentParent.category_level > 2) {
+            currentParent = tags.find(t => t.id === currentParent.parent_id)
+          }
+          
+          if (currentParent && currentParent.category_level === 2) {
+            const grandParent = tags.find(t => t.id === currentParent.parent_id)
+            if (grandParent && hierarchy[grandParent.name] && hierarchy[grandParent.name].subcategories[currentParent.name]) {
+              hierarchy[grandParent.name].subcategories[currentParent.name].tags.push(tag)
+            }
+          }
+        }
+      }
+    })
     
     return NextResponse.json({
       flat: tags,
-      categorized: categorizedTags
+      hierarchy: hierarchy
     })
   } catch (error) {
     console.error('Error fetching tags:', error)

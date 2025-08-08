@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
-import { HierarchicalTagSelector } from '@/components/hierarchical-tag-selector'
+import { ThreeLevelTagSelector } from '@/components/three-level-tag-selector'
 
 export default function AdminPage() {
   const [resources, setResources] = useState<ResourceWithTags[]>([])
@@ -23,7 +23,7 @@ export default function AdminPage() {
   const [newTagName, setNewTagName] = useState('')
   const [newTagColor, setNewTagColor] = useState('#3B82F6')
   const [isAddingTag, setIsAddingTag] = useState(false)
-  const [categorizedTags, setCategorizedTags] = useState<any>({})
+  const [tagHierarchy, setTagHierarchy] = useState<any>({})
 
   useEffect(() => {
     fetchResources()
@@ -84,16 +84,15 @@ export default function AdminPage() {
       
       if (data.flat && Array.isArray(data.flat)) {
         setTags(data.flat)
-        setCategorizedTags(data.categorized || {})
+        setTagHierarchy(data.hierarchy || {})
       } else {
-        console.error('Tags API returned invalid format:', data)
         setTags([])
-        setCategorizedTags({})
+        setTagHierarchy({})
       }
     } catch (error) {
       console.error('Error fetching tags:', error)
       setTags([])
-      setCategorizedTags({})
+      setTagHierarchy({})
     }
   }
 
@@ -292,13 +291,13 @@ export default function AdminPage() {
                   {/* Hierarchical Tag Display */}
                   <div>
                     <h3 className="font-medium mb-3">All Tags ({tags.length} total)</h3>
-                    <HierarchicalTagSelector
-                      categorizedTags={categorizedTags}
+                    <ThreeLevelTagSelector
+                      hierarchy={tagHierarchy}
                       selectedTags={[]}
                       onTagChange={() => {}} // Read-only display
                     />
                     
-                    {Object.keys(categorizedTags).length === 0 && (
+                    {Object.keys(tagHierarchy).length === 0 && (
                       <p className="text-gray-500 text-sm">No tags created yet.</p>
                     )}
                   </div>
@@ -460,13 +459,13 @@ export default function AdminPage() {
                     )}
                     
                     <div className="max-h-96 overflow-y-auto">
-                      <HierarchicalTagSelector
-                        categorizedTags={categorizedTags}
+                      <ThreeLevelTagSelector
+                        hierarchy={tagHierarchy}
                         defaultValues={editingResource?.tags?.map(t => t.id) || []}
                       />
                     </div>
                     
-                    {Object.keys(categorizedTags).length === 0 && (
+                    {Object.keys(tagHierarchy).length === 0 && (
                       <p className="text-sm text-gray-500 mt-2">
                         No tags available. Create your first tag using the "Add Tag" button above.
                       </p>

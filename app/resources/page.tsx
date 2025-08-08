@@ -5,7 +5,7 @@ import { ResourceWithTags, Tag } from '@/lib/db'
 import { ResourceCard } from '@/components/resource-card'
 import { resourceStyles, combineStyles } from '@/lib/styles'
 import { Search, Filter, SortAsc, SortDesc } from 'lucide-react'
-import { HierarchicalFilter } from '@/components/hierarchical-filter'
+import { ThreeLevelFilter } from '@/components/three-level-filter'
 
 export default function ResourcesPage() {
   const [resources, setResources] = useState<ResourceWithTags[]>([])
@@ -16,7 +16,7 @@ export default function ResourcesPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [categorizedTags, setCategorizedTags] = useState<any>({})
+  const [tagHierarchy, setTagHierarchy] = useState<any>({})
 
   useEffect(() => {
     fetchTags()
@@ -75,15 +75,15 @@ export default function ResourcesPage() {
       
       if (data.flat && Array.isArray(data.flat)) {
         setTags(data.flat)
-        setCategorizedTags(data.categorized || {})
+        setTagHierarchy(data.hierarchy || {})
       } else {
         setTags([])
-        setCategorizedTags({})
+        setTagHierarchy({})
       }
     } catch (error) {
       console.error('Error fetching tags:', error)
       setTags([])
-      setCategorizedTags({})
+      setTagHierarchy({})
     }
   }
 
@@ -196,8 +196,8 @@ export default function ResourcesPage() {
                 <span className="text-sm font-medium text-gray-700">Filter by categories:</span>
               </div>
               
-              <HierarchicalFilter
-                categorizedTags={categorizedTags}
+              <ThreeLevelFilter
+                hierarchy={tagHierarchy}
                 selectedTags={selectedTags}
                 onTagToggle={toggleTag}
                 onClearAll={clearAllFilters}
