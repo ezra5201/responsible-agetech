@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react'
 import { ResourceWithTags, Tag } from '@/lib/db'
 import { ResourceCard } from '@/components/resource-card'
-import { resourceStyles, combineStyles } from '@/lib/styles'
-import { Search, Filter, SortAsc, SortDesc } from 'lucide-react'
-import { ThreeLevelFilter } from '@/components/three-level-filter'
+import { SlidingFilterPanel } from '@/components/sliding-filter-panel'
+import { ActiveFiltersBar } from '@/components/active-filters-bar'
+import { resourceStyles } from '@/lib/styles'
+import { Search, SortAsc, SortDesc, Filter } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 export default function ResourcesPage() {
   const [resources, setResources] = useState<ResourceWithTags[]>([])
@@ -17,6 +19,7 @@ export default function ResourcesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [tagHierarchy, setTagHierarchy] = useState<any>({})
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false)
 
   useEffect(() => {
     fetchTags()
@@ -132,14 +135,6 @@ export default function ResourcesPage() {
             >
               Try Again
             </button>
-            <div className="mt-4 text-sm text-red-500">
-              <p>Make sure you have:</p>
-              <ul className="list-disc list-inside mt-2">
-                <li>Set up the DATABASE_URL environment variable</li>
-                <li>Run the database setup scripts</li>
-                <li>Deployed to a platform that supports server-side functions</li>
-              </ul>
-            </div>
           </div>
         </div>
       </div>
@@ -150,11 +145,11 @@ export default function ResourcesPage() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Resources</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-6">Resources</h1>
           
-          {/* Search and Filters */}
-          <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
-            <div className="flex flex-col lg:flex-row gap-4">
+          {/* Search and Sort Controls */}
+          <div className="bg-white rounded-lg shadow-sm border p-4 mb-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               {/* Search */}
               <div className="flex-1">
                 <div className="relative">
@@ -169,7 +164,7 @@ export default function ResourcesPage() {
                 </div>
               </div>
 
-              {/* Sort */}
+              {/* Sort Controls */}
               <div className="flex gap-2">
                 <select
                   value={sortBy}
@@ -186,28 +181,45 @@ export default function ResourcesPage() {
                 >
                   {sortOrder === 'asc' ? <SortAsc className="w-4 h-4" /> : <SortDesc className="w-4 h-4" />}
                 </button>
+                
+                {/* Mobile Filter Button */}
+                <Button
+                  variant="outline"
+                  onClick={() => setIsFilterPanelOpen(true)}
+                  className="sm:hidden"
+                >
+                  <Filter className="w-4 h-4" />
+                </Button>
               </div>
-            </div>
-
-            {/* Hierarchical Tag Filters */}
-            <div className="mt-4">
-              <div className="flex items-center gap-2 mb-4">
-                <Filter className="w-4 h-4 text-gray-500" />
-                <span className="text-sm font-medium text-gray-700">Filter by categories:</span>
-              </div>
-              
-              <ThreeLevelFilter
-                hierarchy={tagHierarchy}
-                selectedTags={selectedTags}
-                onTagToggle={toggleTag}
-                onClearAll={clearAllFilters}
-              />
             </div>
           </div>
 
+          {/* Active Filters Bar */}
+          <div className="mb-6">
+            <ActiveFiltersBar
+              hierarchy={tagHierarchy}
+              selectedTags={selectedTags}
+              onTagToggle={toggleTag}
+              onClearAll={clearAllFilters}
+              onOpenFilters={() => setIsFilterPanelOpen(true)}
+            />
+          </div>
+
           {/* Results Count */}
-          <div className="text-sm text-gray-600 mb-4">
-            Showing {filteredResources.length} of {resources.length} resources
+          <div className="flex items-center justify-between mb-6">
+            <div className="text-sm text-gray-600">
+              Showing {filteredResources.length} of {resources.length} resources
+            </div>
+            
+            {/* Desktop Filter Button */}
+            <Button
+              variant="outline"
+              onClick={() => setIsFilterPanelOpen(true)}
+              className="hidden sm:flex items-center gap-2"
+            >
+              <Filter className="w-4 h-4" />
+              Advanced Filters
+            </Button>
           </div>
 
           {/* Resources Grid */}
@@ -219,11 +231,34 @@ export default function ResourcesPage() {
 
           {filteredResources.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-500">No resources found matching your criteria.</p>
+              <div className="bg-white rounded-lg shadow-sm border p-8">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Resources Found</h3>
+                <p className="text-gray-500 mb-4">
+                  {selectedTags.length > 0 || searchTerm 
+                    ? "Try adjusting your filters or search terms."
+                    : "No resources have been added yet."
+                  }
+                </p>
+                {(selectedTags.length > 0 || searchTerm) && (
+                  <Button onClick={clearAllFilters} variant="outline">
+                    Clear All Filters
+                  </Button>
+                )}
+              </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Sliding Filter Panel */}
+      <SlidingFilterPanel
+        isOpen={isFilterPanelOpen}
+        onClose={() => setIsFilterPanelOpen(false)}
+        hierarchy={tagHierarchy}
+        selectedTags={selectedTags}
+        onTagToggle={toggleTag}
+        onClearAll={clearAllFilters}
+      />
     </div>
   )
 }
