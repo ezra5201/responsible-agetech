@@ -19,6 +19,9 @@ export default function AdminPage() {
   const [editingResource, setEditingResource] = useState<ResourceWithTags | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [newTagName, setNewTagName] = useState('')
+  const [newTagColor, setNewTagColor] = useState('#3B82F6')
+  const [isAddingTag, setIsAddingTag] = useState(false)
 
   useEffect(() => {
     fetchResources()
@@ -162,6 +165,30 @@ export default function AdminPage() {
 
       setIsTagDialogOpen(false)
       fetchTags()
+    } catch (error) {
+      console.error('Error creating tag:', error)
+      alert('Failed to create tag. Please try again.')
+    }
+  }
+
+  const handleQuickTagAdd = async () => {
+    if (!newTagName.trim()) return
+    
+    try {
+      const response = await fetch('/api/tags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newTagName.trim(), color: newTagColor })
+      })
+  
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+  
+      setNewTagName('')
+      setNewTagColor('#3B82F6')
+      setIsAddingTag(false)
+      fetchTags() // Refresh the tags list
     } catch (error) {
       console.error('Error creating tag:', error)
       alert('Failed to create tag. Please try again.')
@@ -343,7 +370,69 @@ export default function AdminPage() {
                   </div>
                   
                   <div>
-                    <Label>Tags</Label>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label>Tags</Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsAddingTag(!isAddingTag)}
+                        className="text-xs"
+                      >
+                        <Plus className="w-3 h-3 mr-1" />
+                        Add Tag
+                      </Button>
+                    </div>
+                    
+                    {isAddingTag && (
+                      <div className="mb-4 p-3 bg-gray-50 rounded-md border">
+                        <div className="flex gap-2 items-end">
+                          <div className="flex-1">
+                            <Label htmlFor="quick-tag-name" className="text-xs">Tag Name</Label>
+                            <Input
+                              id="quick-tag-name"
+                              value={newTagName}
+                              onChange={(e) => setNewTagName(e.target.value)}
+                              placeholder="Enter tag name"
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="quick-tag-color" className="text-xs">Color</Label>
+                            <Input
+                              id="quick-tag-color"
+                              type="color"
+                              value={newTagColor}
+                              onChange={(e) => setNewTagColor(e.target.value)}
+                              className="h-8 w-16"
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={handleQuickTagAdd}
+                            disabled={!newTagName.trim()}
+                            className="h-8"
+                          >
+                            Add
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setIsAddingTag(false)
+                              setNewTagName('')
+                              setNewTagColor('#3B82F6')
+                            }}
+                            className="h-8"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="grid grid-cols-2 gap-2 mt-2">
                       {tags.map((tag) => (
                         <div key={tag.id} className="flex items-center space-x-2">
@@ -365,7 +454,7 @@ export default function AdminPage() {
                     </div>
                     {tags.length === 0 && (
                       <p className="text-sm text-gray-500 mt-2">
-                        No tags available. Create some tags first using "Manage Tags".
+                        No tags available. Create your first tag using the "Add Tag" button above.
                       </p>
                     )}
                   </div>
