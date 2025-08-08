@@ -164,7 +164,14 @@ export default function AdminPage() {
         throw new Error(`HTTP ${response.status}`)
       }
 
-      setIsTagDialogOpen(false)
+      // Remove this line: setIsTagDialogOpen(false)
+      
+      // Clear the form after successful submission
+      const form = document.querySelector('form[action="handleTagSubmit"]') as HTMLFormElement
+      if (form) {
+        form.reset()
+      }
+      
       fetchTags()
     } catch (error) {
       console.error('Error creating tag:', error)
@@ -257,7 +264,7 @@ export default function AdminPage() {
                 <DialogHeader>
                   <DialogTitle>Add New Tag</DialogTitle>
                 </DialogHeader>
-                <form action={handleTagSubmit} className="space-y-4">
+                <form action={handleTagSubmit} className="space-y-4" key={tags.length}>
                   <div>
                     <Label htmlFor="tag-name">Tag Name</Label>
                     <Input id="tag-name" name="name" required />
