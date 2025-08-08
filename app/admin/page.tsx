@@ -384,14 +384,17 @@ export default function AdminPage() {
                   </div>
                   
                   <div>
-                    <Label htmlFor="linkedin_profile">LinkedIn Profile</Label>
+                    <Label htmlFor="linkedin_profile">LinkedIn Profile (Optional)</Label>
                     <Input 
                       id="linkedin_profile" 
                       name="linkedin_profile" 
                       type="url"
-                      placeholder="https://linkedin.com/in/username"
+                      placeholder="https://linkedin.com/in/username (optional)"
                       defaultValue={editingResource?.linkedin_profile || ''}
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Leave blank if not applicable
+                    </p>
                   </div>
                   
                   <div>

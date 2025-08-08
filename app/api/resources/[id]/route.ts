@@ -43,6 +43,8 @@ export async function PUT(
         WHERE id = ${resourceId}
         RETURNING *
       `
+      // Add linkedin_profile as null for consistency
+      resource.linkedin_profile = null
     }
     
     // Delete existing tags

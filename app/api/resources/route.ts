@@ -14,6 +14,17 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'date'
     const sortOrder = searchParams.get('sortOrder') || 'desc'
     
+    // First, check if linkedin_profile column exists
+    const columnCheck = await sql`
+      SELECT EXISTS(
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'resources' 
+        AND column_name = 'linkedin_profile'
+      ) as has_linkedin_column
+    `
+    
+    const hasLinkedInColumn = columnCheck[0].has_linkedin_column
+    
     // Validate sortBy parameter and create ORDER BY clause
     let orderByClause
     if (sortBy === 'title') {
@@ -39,58 +50,90 @@ export async function GET(request: NextRequest) {
     
     if (tags.length > 0) {
       // Query with tag filtering
-      resources = await sql`
-        SELECT DISTINCT r.id, r.submitted_by, r.date, r.title, r.description, 
-               r.url_link, r.download_link, 
-               CASE WHEN EXISTS(SELECT 1 FROM information_schema.columns 
-                               WHERE table_name = 'resources' 
-                               AND column_name = 'linkedin_profile') 
-                    THEN r.linkedin_profile 
-                    ELSE NULL 
-               END as linkedin_profile,
-               r.created_at, r.updated_at,
-               COALESCE(
-                 JSON_AGG(
-                   JSON_BUILD_OBJECT('id', t.id, 'name', t.name, 'color', t.color)
-                 ) FILTER (WHERE t.id IS NOT NULL), 
-                 '[]'::json
-               ) as tags
-        FROM resources r
-        LEFT JOIN resource_tags rt ON r.id = rt.resource_id
-        LEFT JOIN tags t ON rt.tag_id = t.id
-        WHERE r.id IN (
-          SELECT DISTINCT rt2.resource_id 
-          FROM resource_tags rt2 
-          JOIN tags t2 ON rt2.tag_id = t2.id 
-          WHERE t2.name = ANY(${tags})
-        )
-        GROUP BY r.id, r.date, r.title, r.submitted_by, r.created_at
-        ${orderByClause}
-      `
+      if (hasLinkedInColumn) {
+        resources = await sql`
+          SELECT DISTINCT r.id, r.submitted_by, r.date, r.title, r.description, 
+                 r.url_link, r.download_link, r.linkedin_profile,
+                 r.created_at, r.updated_at,
+                 COALESCE(
+                   JSON_AGG(
+                     JSON_BUILD_OBJECT('id', t.id, 'name', t.name, 'color', t.color)
+                   ) FILTER (WHERE t.id IS NOT NULL), 
+                   '[]'::json
+                 ) as tags
+          FROM resources r
+          LEFT JOIN resource_tags rt ON r.id = rt.resource_id
+          LEFT JOIN tags t ON rt.tag_id = t.id
+          WHERE r.id IN (
+            SELECT DISTINCT rt2.resource_id 
+            FROM resource_tags rt2 
+            JOIN tags t2 ON rt2.tag_id = t2.id 
+            WHERE t2.name = ANY(${tags})
+          )
+          GROUP BY r.id, r.date, r.title, r.submitted_by, r.created_at
+          ${orderByClause}
+        `
+      } else {
+        resources = await sql`
+          SELECT DISTINCT r.id, r.submitted_by, r.date, r.title, r.description, 
+                 r.url_link, r.download_link, NULL as linkedin_profile,
+                 r.created_at, r.updated_at,
+                 COALESCE(
+                   JSON_AGG(
+                     JSON_BUILD_OBJECT('id', t.id, 'name', t.name, 'color', t.color)
+                   ) FILTER (WHERE t.id IS NOT NULL), 
+                   '[]'::json
+                 ) as tags
+          FROM resources r
+          LEFT JOIN resource_tags rt ON r.id = rt.resource_id
+          LEFT JOIN tags t ON rt.tag_id = t.id
+          WHERE r.id IN (
+            SELECT DISTINCT rt2.resource_id 
+            FROM resource_tags rt2 
+            JOIN tags t2 ON rt2.tag_id = t2.id 
+            WHERE t2.name = ANY(${tags})
+          )
+          GROUP BY r.id, r.date, r.title, r.submitted_by, r.created_at
+          ${orderByClause}
+        `
+      }
     } else {
       // Query without tag filtering
-      resources = await sql`
-        SELECT r.id, r.submitted_by, r.date, r.title, r.description, 
-               r.url_link, r.download_link,
-               CASE WHEN EXISTS(SELECT 1 FROM information_schema.columns 
-                               WHERE table_name = 'resources' 
-                               AND column_name = 'linkedin_profile') 
-                    THEN r.linkedin_profile 
-                    ELSE NULL 
-               END as linkedin_profile,
-               r.created_at, r.updated_at,
-               COALESCE(
-                 JSON_AGG(
-                   JSON_BUILD_OBJECT('id', t.id, 'name', t.name, 'color', t.color)
-                 ) FILTER (WHERE t.id IS NOT NULL), 
-                 '[]'::json
-               ) as tags
-        FROM resources r
-        LEFT JOIN resource_tags rt ON r.id = rt.resource_id
-        LEFT JOIN tags t ON rt.tag_id = t.id
-        GROUP BY r.id, r.date, r.title, r.submitted_by, r.created_at
-        ${orderByClause}
-      `
+      if (hasLinkedInColumn) {
+        resources = await sql`
+          SELECT r.id, r.submitted_by, r.date, r.title, r.description, 
+                 r.url_link, r.download_link, r.linkedin_profile,
+                 r.created_at, r.updated_at,
+                 COALESCE(
+                   JSON_AGG(
+                     JSON_BUILD_OBJECT('id', t.id, 'name', t.name, 'color', t.color)
+                   ) FILTER (WHERE t.id IS NOT NULL), 
+                   '[]'::json
+                 ) as tags
+          FROM resources r
+          LEFT JOIN resource_tags rt ON r.id = rt.resource_id
+          LEFT JOIN tags t ON rt.tag_id = t.id
+          GROUP BY r.id, r.date, r.title, r.submitted_by, r.created_at
+          ${orderByClause}
+        `
+      } else {
+        resources = await sql`
+          SELECT r.id, r.submitted_by, r.date, r.title, r.description, 
+                 r.url_link, r.download_link, NULL as linkedin_profile,
+                 r.created_at, r.updated_at,
+                 COALESCE(
+                   JSON_AGG(
+                     JSON_BUILD_OBJECT('id', t.id, 'name', t.name, 'color', t.color)
+                   ) FILTER (WHERE t.id IS NOT NULL), 
+                   '[]'::json
+                 ) as tags
+          FROM resources r
+          LEFT JOIN resource_tags rt ON r.id = rt.resource_id
+          LEFT JOIN tags t ON rt.tag_id = t.id
+          GROUP BY r.id, r.date, r.title, r.submitted_by, r.created_at
+          ${orderByClause}
+        `
+      }
     }
     
     return NextResponse.json(resources)
@@ -133,6 +176,8 @@ export async function POST(request: NextRequest) {
         VALUES (${submitted_by}, ${date}, ${title}, ${description}, ${url_link}, ${download_link})
         RETURNING *
       `
+      // Add linkedin_profile as null for consistency
+      resource.linkedin_profile = null
     }
     
     // Insert resource tags
