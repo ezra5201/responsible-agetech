@@ -207,6 +207,24 @@ export default function AdminPage() {
     }
   }
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
+  }
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
@@ -318,6 +336,14 @@ export default function AdminPage() {
                   <DialogTitle>
                     {editingResource ? 'Edit Resource' : 'Add New Resource'}
                   </DialogTitle>
+                  {editingResource && (
+                    <div className="text-sm text-gray-500 mt-2">
+                      <p>Originally submitted: {formatDate(editingResource.date)}</p>
+                      {editingResource.updated_at && editingResource.updated_at !== editingResource.created_at && (
+                        <p>Last updated: {formatDateTime(editingResource.updated_at)}</p>
+                      )}
+                    </div>
+                  )}
                 </DialogHeader>
                 <form action={handleResourceSubmit} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -331,7 +357,9 @@ export default function AdminPage() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="date">Date</Label>
+                      <Label htmlFor="date">
+                        {editingResource ? 'Date Submitted (Original)' : 'Date Submitted'}
+                      </Label>
                       <Input 
                         id="date" 
                         name="date" 
@@ -339,6 +367,11 @@ export default function AdminPage() {
                         defaultValue={editingResource?.date}
                         required 
                       />
+                      {editingResource && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          This preserves the original submission date
+                        </p>
+                      )}
                     </div>
                   </div>
                   
@@ -464,7 +497,7 @@ export default function AdminPage() {
                     <div className="max-h-96 overflow-y-auto">
                       <ThreeLevelTagSelector
                         hierarchy={tagHierarchy}
-                        defaultValues={editingResource?.tags?.map(t => t.id) || []}
+                        defaultValues={editingResource?.tags?.map(t => t.tag_id) || []}
                       />
                     </div>
                     

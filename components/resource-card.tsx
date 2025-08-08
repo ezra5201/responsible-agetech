@@ -1,6 +1,6 @@
 import { ResourceWithTags } from '@/lib/db'
 import { resourceStyles, combineStyles } from '@/lib/styles'
-import { ExternalLink, Download, Calendar, User, Linkedin } from 'lucide-react'
+import { ExternalLink, Download, Calendar, User, Linkedin, Clock } from 'lucide-react'
 
 interface ResourceCardProps {
   resource: ResourceWithTags
@@ -40,6 +40,24 @@ export function ResourceCard({ resource, showActions = false, onEdit, onDelete }
     resourceStyles.metadata.marginBottom
   )
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
+  }
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
+  }
+
+  const wasUpdated = resource.updated_at && resource.updated_at !== resource.created_at
+
   return (
     <div className={cardClasses}>
       <div className="flex justify-between items-start mb-3">
@@ -70,9 +88,15 @@ export function ResourceCard({ resource, showActions = false, onEdit, onDelete }
           </span>
           <span className="flex items-center gap-1">
             <Calendar className="w-3 h-3" />
-            {new Date(resource.date).toLocaleDateString()}
+            {formatDate(resource.date)}
           </span>
         </div>
+        {wasUpdated && (
+          <div className="flex items-center gap-1 text-xs text-gray-400">
+            <Clock className="w-3 h-3" />
+            Updated {formatDateTime(resource.updated_at)}
+          </div>
+        )}
       </div>
 
       {resource.description && (
