@@ -8,7 +8,7 @@ export async function GET() {
       WITH RECURSIVE tag_hierarchy AS (
         -- Base case: root categories (level 1)
         SELECT id, name, color, parent_id, category_level, sort_order, 
-               ARRAY[name] as path, name as root_category
+               ARRAY[name::varchar] as path, name as root_category
         FROM tags 
         WHERE parent_id IS NULL
         
@@ -16,7 +16,7 @@ export async function GET() {
         
         -- Recursive case: child tags
         SELECT t.id, t.name, t.color, t.parent_id, t.category_level, t.sort_order,
-               th.path || t.name, th.root_category
+               th.path || t.name::varchar, th.root_category
         FROM tags t
         JOIN tag_hierarchy th ON t.parent_id = th.id
       )
