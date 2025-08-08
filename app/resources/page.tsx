@@ -5,6 +5,7 @@ import { ResourceWithTags, Tag } from '@/lib/db'
 import { ResourceCard } from '@/components/resource-card'
 import { resourceStyles, combineStyles } from '@/lib/styles'
 import { Search, Filter, SortAsc, SortDesc } from 'lucide-react'
+import { HierarchicalFilter } from '@/components/hierarchical-filter'
 
 export default function ResourcesPage() {
   const [resources, setResources] = useState<ResourceWithTags[]>([])
@@ -15,6 +16,7 @@ export default function ResourcesPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [categorizedTags, setCategorizedTags] = useState<any>({})
 
   useEffect(() => {
     fetchTags()
@@ -70,9 +72,18 @@ export default function ResourcesPage() {
     try {
       const response = await fetch('/api/tags')
       const data = await response.json()
-      setTags(data)
+      
+      if (data.flat && Array.isArray(data.flat)) {
+        setTags(data.flat)
+        setCategorizedTags(data.categorized || {})
+      } else {
+        setTags([])
+        setCategorizedTags({})
+      }
     } catch (error) {
       console.error('Error fetching tags:', error)
+      setTags([])
+      setCategorizedTags({})
     }
   }
 
@@ -89,6 +100,11 @@ export default function ResourcesPage() {
     resource.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     resource.submitted_by.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  const clearAllFilters = () => {
+    setSelectedTags([])
+    setSearchTerm('')
+  }
 
   if (loading) {
     return (
@@ -173,37 +189,19 @@ export default function ResourcesPage() {
               </div>
             </div>
 
-            {/* Tag Filters */}
+            {/* Hierarchical Tag Filters */}
             <div className="mt-4">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-4">
                 <Filter className="w-4 h-4 text-gray-500" />
-                <span className="text-sm font-medium text-gray-700">Filter by tags:</span>
+                <span className="text-sm font-medium text-gray-700">Filter by categories:</span>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {tags.map((tag) => (
-                  <button
-                    key={tag.id}
-                    onClick={() => toggleTag(tag.name)}
-                    className={combineStyles(
-                      'px-3 py-1 rounded-full text-sm font-medium transition-colors',
-                      selectedTags.includes(tag.name)
-                        ? 'text-white'
-                        : 'hover:opacity-80'
-                    )}
-                    style={{
-                      backgroundColor: selectedTags.includes(tag.name) 
-                        ? tag.color 
-                        : `${tag.color}20`,
-                      color: selectedTags.includes(tag.name) 
-                        ? 'white' 
-                        : tag.color,
-                      border: `1px solid ${tag.color}40`
-                    }}
-                  >
-                    {tag.name}
-                  </button>
-                ))}
-              </div>
+              
+              <HierarchicalFilter
+                categorizedTags={categorizedTags}
+                selectedTags={selectedTags}
+                onTagToggle={toggleTag}
+                onClearAll={clearAllFilters}
+              />
             </div>
           </div>
 

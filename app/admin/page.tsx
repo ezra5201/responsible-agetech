@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
+import { HierarchicalTagSelector } from '@/components/hierarchical-tag-selector'
 
 export default function AdminPage() {
   const [resources, setResources] = useState<ResourceWithTags[]>([])
@@ -22,6 +23,7 @@ export default function AdminPage() {
   const [newTagName, setNewTagName] = useState('')
   const [newTagColor, setNewTagColor] = useState('#3B82F6')
   const [isAddingTag, setIsAddingTag] = useState(false)
+  const [categorizedTags, setCategorizedTags] = useState<any>({})
 
   useEffect(() => {
     fetchResources()
@@ -80,15 +82,18 @@ export default function AdminPage() {
       
       const data = await response.json()
       
-      if (Array.isArray(data)) {
-        setTags(data)
+      if (data.flat && Array.isArray(data.flat)) {
+        setTags(data.flat)
+        setCategorizedTags(data.categorized || {})
       } else {
-        console.error('Tags API returned non-array:', data)
+        console.error('Tags API returned invalid format:', data)
         setTags([])
+        setCategorizedTags({})
       }
     } catch (error) {
       console.error('Error fetching tags:', error)
-      setTags([]) // Ensure tags is always an array
+      setTags([])
+      setCategorizedTags({})
     }
   }
 
@@ -260,44 +265,46 @@ export default function AdminPage() {
                   Manage Tags
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Add New Tag</DialogTitle>
+                  <DialogTitle>Tag Management</DialogTitle>
                 </DialogHeader>
-                <form action={handleTagSubmit} className="space-y-4" key={tags.length}>
-                  <div>
-                    <Label htmlFor="tag-name">Tag Name</Label>
-                    <Input id="tag-name" name="name" required />
-                  </div>
-                  <div>
-                    <Label htmlFor="tag-color">Color</Label>
-                    <Input id="tag-color" name="color" type="color" defaultValue="#3B82F6" />
-                  </div>
-                  <Button type="submit">Create Tag</Button>
-                </form>
                 
-                <div className="mt-6">
-                  <h3 className="font-medium mb-3">Existing Tags ({tags.length})</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {tags.map((tag) => (
-                      <span
-                        key={tag.id}
-                        className="px-3 py-1 rounded-full text-sm font-medium"
-                        style={{ 
-                          backgroundColor: `${tag.color}20`, 
-                          color: tag.color,
-                          border: `1px solid ${tag.color}40`
-                        }}
-                      >
-                        {tag.name}
-                      </span>
-                    ))}
+                <div className="space-y-6">
+                  {/* Add New Tag Form */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-medium mb-3">Add New Tag</h3>
+                    <form action={handleTagSubmit} className="space-y-4" key={tags.length}>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="tag-name">Tag Name</Label>
+                          <Input id="tag-name" name="name" required />
+                        </div>
+                        <div>
+                          <Label htmlFor="tag-color">Color</Label>
+                          <Input id="tag-color" name="color" type="color" defaultValue="#3B82F6" />
+                        </div>
+                      </div>
+                      <Button type="submit">Create Tag</Button>
+                    </form>
                   </div>
-                  {tags.length === 0 && (
-                    <p className="text-gray-500 text-sm">No tags created yet.</p>
-                  )}
+                  
+                  {/* Hierarchical Tag Display */}
+                  <div>
+                    <h3 className="font-medium mb-3">All Tags ({tags.length} total)</h3>
+                    <HierarchicalTagSelector
+                      categorizedTags={categorizedTags}
+                      selectedTags={[]}
+                      onTagChange={() => {}} // Read-only display
+                    />
+                    
+                    {Object.keys(categorizedTags).length === 0 && (
+                      <p className="text-gray-500 text-sm">No tags created yet.</p>
+                    )}
+                  </div>
                 </div>
               </DialogContent>
+
             </Dialog>
 
             <Dialog open={isResourceDialogOpen} onOpenChange={setIsResourceDialogOpen}>
@@ -452,26 +459,14 @@ export default function AdminPage() {
                       </div>
                     )}
                     
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                      {tags.map((tag) => (
-                        <div key={tag.id} className="flex items-center space-x-2">
-                          <Checkbox 
-                            id={`tag-${tag.id}`}
-                            name="tags"
-                            value={tag.id}
-                            defaultChecked={editingResource?.tags?.some(t => t.id === tag.id)}
-                          />
-                          <Label 
-                            htmlFor={`tag-${tag.id}`}
-                            className="text-sm"
-                            style={{ color: tag.color }}
-                          >
-                            {tag.name}
-                          </Label>
-                        </div>
-                      ))}
+                    <div className="max-h-96 overflow-y-auto">
+                      <HierarchicalTagSelector
+                        categorizedTags={categorizedTags}
+                        defaultValues={editingResource?.tags?.map(t => t.id) || []}
+                      />
                     </div>
-                    {tags.length === 0 && (
+                    
+                    {Object.keys(categorizedTags).length === 0 && (
                       <p className="text-sm text-gray-500 mt-2">
                         No tags available. Create your first tag using the "Add Tag" button above.
                       </p>
