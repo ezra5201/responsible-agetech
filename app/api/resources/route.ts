@@ -40,7 +40,15 @@ export async function GET(request: NextRequest) {
     if (tags.length > 0) {
       // Query with tag filtering
       resources = await sql`
-        SELECT DISTINCT r.*, 
+        SELECT DISTINCT r.id, r.submitted_by, r.date, r.title, r.description, 
+               r.url_link, r.download_link, 
+               CASE WHEN EXISTS(SELECT 1 FROM information_schema.columns 
+                               WHERE table_name = 'resources' 
+                               AND column_name = 'linkedin_profile') 
+                    THEN r.linkedin_profile 
+                    ELSE NULL 
+               END as linkedin_profile,
+               r.created_at, r.updated_at,
                COALESCE(
                  JSON_AGG(
                    JSON_BUILD_OBJECT('id', t.id, 'name', t.name, 'color', t.color)
@@ -62,7 +70,15 @@ export async function GET(request: NextRequest) {
     } else {
       // Query without tag filtering
       resources = await sql`
-        SELECT r.*, 
+        SELECT r.id, r.submitted_by, r.date, r.title, r.description, 
+               r.url_link, r.download_link,
+               CASE WHEN EXISTS(SELECT 1 FROM information_schema.columns 
+                               WHERE table_name = 'resources' 
+                               AND column_name = 'linkedin_profile') 
+                    THEN r.linkedin_profile 
+                    ELSE NULL 
+               END as linkedin_profile,
+               r.created_at, r.updated_at,
                COALESCE(
                  JSON_AGG(
                    JSON_BUILD_OBJECT('id', t.id, 'name', t.name, 'color', t.color)
@@ -92,12 +108,32 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { submitted_by, date, title, description, url_link, download_link, linkedin_profile, tagIds } = body
     
-    // Insert resource
-    const [resource] = await sql`
-      INSERT INTO resources (submitted_by, date, title, description, url_link, download_link, linkedin_profile)
-      VALUES (${submitted_by}, ${date}, ${title}, ${description}, ${url_link}, ${download_link}, ${linkedin_profile})
-      RETURNING *
+    // Check if linkedin_profile column exists
+    const columnExists = await sql`
+      SELECT EXISTS(
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'resources' 
+        AND column_name = 'linkedin_profile'
+      ) as exists
     `
+    
+    let resource
+    
+    if (columnExists[0].exists) {
+      // Insert with linkedin_profile column
+      [resource] = await sql`
+        INSERT INTO resources (submitted_by, date, title, description, url_link, download_link, linkedin_profile)
+        VALUES (${submitted_by}, ${date}, ${title}, ${description}, ${url_link}, ${download_link}, ${linkedin_profile})
+        RETURNING *
+      `
+    } else {
+      // Insert without linkedin_profile column
+      [resource] = await sql`
+        INSERT INTO resources (submitted_by, date, title, description, url_link, download_link)
+        VALUES (${submitted_by}, ${date}, ${title}, ${description}, ${url_link}, ${download_link})
+        RETURNING *
+      `
+    }
     
     // Insert resource tags
     if (tagIds && tagIds.length > 0) {

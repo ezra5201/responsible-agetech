@@ -9,7 +9,10 @@ export async function POST() {
         id SERIAL PRIMARY KEY,
         name VARCHAR(100) UNIQUE NOT NULL,
         color VARCHAR(7) DEFAULT '#3B82F6',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        parent_id INTEGER REFERENCES tags(id),
+        category_level INTEGER DEFAULT 1,
+        sort_order INTEGER DEFAULT 0
       )
     `
 
@@ -39,8 +42,11 @@ export async function POST() {
     // Create indexes
     await sql`CREATE INDEX IF NOT EXISTS idx_resources_date ON resources(date)`
     await sql`CREATE INDEX IF NOT EXISTS idx_resources_title ON resources(title)`
+    await sql`CREATE INDEX IF NOT EXISTS idx_resources_linkedin ON resources(linkedin_profile)`
     await sql`CREATE INDEX IF NOT EXISTS idx_resource_tags_resource ON resource_tags(resource_id)`
     await sql`CREATE INDEX IF NOT EXISTS idx_resource_tags_tag ON resource_tags(tag_id)`
+    await sql`CREATE INDEX IF NOT EXISTS idx_tags_parent ON tags(parent_id)`
+    await sql`CREATE INDEX IF NOT EXISTS idx_tags_level ON tags(category_level)`
 
     // Insert sample tags
     await sql`
