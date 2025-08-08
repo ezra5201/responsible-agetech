@@ -22,6 +22,7 @@ export async function POST() {
         description TEXT,
         url_link VARCHAR(1000),
         download_link VARCHAR(1000),
+        linkedin_profile VARCHAR(1000),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )

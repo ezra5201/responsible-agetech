@@ -12,6 +12,7 @@ export interface Resource {
   description: string | null
   url_link: string | null
   download_link: string | null
+  linkedin_profile: string | null
   created_at: string
   updated_at: string
   tags?: Tag[]

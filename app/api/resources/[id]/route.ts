@@ -7,7 +7,7 @@ export async function PUT(
 ) {
   try {
     const body = await request.json()
-    const { submitted_by, date, title, description, url_link, download_link, tagIds } = body
+    const { submitted_by, date, title, description, url_link, download_link, linkedin_profile, tagIds } = body
     const resourceId = parseInt(params.id)
     
     // Update resource
@@ -15,7 +15,8 @@ export async function PUT(
       UPDATE resources 
       SET submitted_by = ${submitted_by}, date = ${date}, title = ${title}, 
           description = ${description}, url_link = ${url_link}, 
-          download_link = ${download_link}, updated_at = CURRENT_TIMESTAMP
+          download_link = ${download_link}, linkedin_profile = ${linkedin_profile},
+          updated_at = CURRENT_TIMESTAMP
       WHERE id = ${resourceId}
       RETURNING *
     `

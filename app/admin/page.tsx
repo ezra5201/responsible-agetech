@@ -101,6 +101,7 @@ export default function AdminPage() {
         description: formData.get('description'),
         url_link: formData.get('url_link'),
         download_link: formData.get('download_link'),
+        linkedin_profile: formData.get('linkedin_profile'),
         tagIds: formData.getAll('tags').map(id => parseInt(id as string))
       }
 
@@ -367,6 +368,17 @@ export default function AdminPage() {
                         defaultValue={editingResource?.download_link || ''}
                       />
                     </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="linkedin_profile">LinkedIn Profile</Label>
+                    <Input 
+                      id="linkedin_profile" 
+                      name="linkedin_profile" 
+                      type="url"
+                      placeholder="https://linkedin.com/in/username"
+                      defaultValue={editingResource?.linkedin_profile || ''}
+                    />
                   </div>
                   
                   <div>

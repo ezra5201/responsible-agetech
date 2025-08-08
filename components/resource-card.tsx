@@ -1,6 +1,6 @@
 import { ResourceWithTags } from '@/lib/db'
 import { resourceStyles, combineStyles } from '@/lib/styles'
-import { ExternalLink, Download, Calendar, User } from 'lucide-react'
+import { ExternalLink, Download, Calendar, User, Linkedin } from 'lucide-react'
 
 interface ResourceCardProps {
   resource: ResourceWithTags
@@ -105,7 +105,7 @@ export function ResourceCard({ resource, showActions = false, onEdit, onDelete }
         </div>
       )}
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         {resource.url_link && (
           <a
             href={resource.url_link}
@@ -144,6 +144,26 @@ export function ResourceCard({ resource, showActions = false, onEdit, onDelete }
           >
             <Download className="w-4 h-4" />
             Download
+          </a>
+        )}
+        {resource.linkedin_profile && (
+          <a
+            href={resource.linkedin_profile}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={combineStyles(
+              'bg-blue-700 hover:bg-blue-800',
+              resourceStyles.primaryButton.text,
+              resourceStyles.primaryButton.padding,
+              resourceStyles.primaryButton.borderRadius,
+              resourceStyles.primaryButton.size,
+              resourceStyles.primaryButton.weight,
+              resourceStyles.primaryButton.transition,
+              'inline-flex items-center gap-2'
+            )}
+          >
+            <Linkedin className="w-4 h-4" />
+            LinkedIn
           </a>
         )}
       </div>
