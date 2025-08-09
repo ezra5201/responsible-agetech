@@ -1,21 +1,21 @@
-'use client'
+"use client"
 
-import { useState, useEffect } from 'react'
-import { ResourceWithTags, Tag } from '@/lib/db'
-import { ResourceCard } from '@/components/resource-card'
-import { SlidingFilterPanel } from '@/components/sliding-filter-panel'
-import { ActiveFiltersBar } from '@/components/active-filters-bar'
-import { resourceStyles } from '@/lib/styles'
-import { Search, SortAsc, SortDesc, Filter } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { useState, useEffect } from "react"
+import type { ResourceWithTags, Tag } from "@/lib/db"
+import { ResourceCard } from "@/components/resource-card"
+import { SlidingFilterPanel } from "@/components/sliding-filter-panel"
+import { ActiveFiltersBar } from "@/components/active-filters-bar"
+import { resourceStyles } from "@/lib/styles"
+import { Search, SortAsc, SortDesc, Filter } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 export default function ResourcesPage() {
   const [resources, setResources] = useState<ResourceWithTags[]>([])
   const [tags, setTags] = useState<Tag[]>([])
   const [selectedTags, setSelectedTags] = useState<string[]>([])
-  const [sortBy, setSortBy] = useState('date')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
-  const [searchTerm, setSearchTerm] = useState('')
+  const [sortBy, setSortBy] = useState("date")
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
+  const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [tagHierarchy, setTagHierarchy] = useState<any>({})
@@ -36,35 +36,35 @@ export default function ResourcesPage() {
       const params = new URLSearchParams({
         sortBy,
         sortOrder,
-        ...(selectedTags.length > 0 && { tags: selectedTags.join(',') })
+        ...(selectedTags.length > 0 && { tags: selectedTags.join(",") }),
       })
-      
+
       const response = await fetch(`/api/resources?${params}`)
-      
+
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('API Error:', response.status, errorText)
+        console.error("API Error:", response.status, errorText)
         throw new Error(`HTTP ${response.status}: ${errorText}`)
       }
-      
-      const contentType = response.headers.get('content-type')
-      if (!contentType || !contentType.includes('application/json')) {
+
+      const contentType = response.headers.get("content-type")
+      if (!contentType || !contentType.includes("application/json")) {
         const text = await response.text()
-        console.error('Non-JSON response:', text)
-        throw new Error('Server returned non-JSON response')
+        console.error("Non-JSON response:", text)
+        throw new Error("Server returned non-JSON response")
       }
-      
+
       const data = await response.json()
-      
+
       if (data.error) {
-        console.error('API returned error:', data.error, data.details)
+        console.error("API returned error:", data.error, data.details)
         throw new Error(data.error)
       }
-      
+
       setResources(data)
     } catch (error) {
-      console.error('Error fetching resources:', error)
-      setError(error instanceof Error ? error.message : 'Failed to fetch resources')
+      console.error("Error fetching resources:", error)
+      setError(error instanceof Error ? error.message : "Failed to fetch resources")
       setResources([])
     } finally {
       setLoading(false)
@@ -73,9 +73,10 @@ export default function ResourcesPage() {
 
   const fetchTags = async () => {
     try {
-      const response = await fetch('/api/tags')
+      // Use public=true parameter to get only tags with associated resources
+      const response = await fetch("/api/tags?public=true")
       const data = await response.json()
-      
+
       if (data.flat && Array.isArray(data.flat)) {
         setTags(data.flat)
         setTagHierarchy(data.hierarchy || {})
@@ -84,30 +85,37 @@ export default function ResourcesPage() {
         setTagHierarchy({})
       }
     } catch (error) {
-      console.error('Error fetching tags:', error)
+      console.error("Error fetching tags:", error)
       setTags([])
       setTagHierarchy({})
     }
   }
 
   const toggleTag = (tagName: string) => {
-    setSelectedTags(prev => 
-      prev.includes(tagName) 
-        ? prev.filter(t => t !== tagName)
-        : [...prev, tagName]
-    )
+    setSelectedTags((prev) => (prev.includes(tagName) ? prev.filter((t) => t !== tagName) : [...prev, tagName]))
   }
 
-  const filteredResources = resources.filter(resource =>
-    resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    resource.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    resource.submitted_by.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredResources = resources.filter(
+    (resource) =>
+      resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      resource.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      resource.submitted_by.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   const clearAllFilters = () => {
     setSelectedTags([])
-    setSearchTerm('')
+    setSearchTerm("")
   }
+
+  // Count available tags for display
+  const availableTagsCount = Object.values(tagHierarchy).reduce((total, category: any) => {
+    return (
+      total +
+      Object.values(category.subcategories).reduce((subTotal, subcategory: any) => {
+        return subTotal + subcategory.tags.length
+      }, 0)
+    )
+  }, 0)
 
   if (loading) {
     return (
@@ -126,7 +134,7 @@ export default function ResourcesPage() {
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
             <h2 className="text-lg font-semibold text-red-800 mb-2">Error Loading Resources</h2>
             <p className="text-red-600 mb-4">{error}</p>
-            <button 
+            <button
               onClick={() => {
                 setError(null)
                 fetchResources()
@@ -146,7 +154,7 @@ export default function ResourcesPage() {
       <div className="max-w-7xl mx-auto px-4">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">Resources</h1>
-          
+
           {/* Search and Sort Controls */}
           <div className="bg-white rounded-lg shadow-sm border p-4 mb-4">
             <div className="flex flex-col sm:flex-row gap-4">
@@ -176,18 +184,14 @@ export default function ResourcesPage() {
                   <option value="submitted_by">Submitted By</option>
                 </select>
                 <button
-                  onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                  onClick={() => setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))}
                   className="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50 focus:ring-2 focus:ring-blue-500"
                 >
-                  {sortOrder === 'asc' ? <SortAsc className="w-4 h-4" /> : <SortDesc className="w-4 h-4" />}
+                  {sortOrder === "asc" ? <SortAsc className="w-4 h-4" /> : <SortDesc className="w-4 h-4" />}
                 </button>
-                
+
                 {/* Mobile Filter Button */}
-                <Button
-                  variant="outline"
-                  onClick={() => setIsFilterPanelOpen(true)}
-                  className="sm:hidden"
-                >
+                <Button variant="outline" onClick={() => setIsFilterPanelOpen(true)} className="sm:hidden">
                   <Filter className="w-4 h-4" />
                 </Button>
               </div>
@@ -205,12 +209,17 @@ export default function ResourcesPage() {
             />
           </div>
 
-          {/* Results Count */}
+          {/* Results Count and Filter Info */}
           <div className="flex items-center justify-between mb-6">
             <div className="text-sm text-gray-600">
-              Showing {filteredResources.length} of {resources.length} resources
+              <div>
+                Showing {filteredResources.length} of {resources.length} resources
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                {availableTagsCount} filter tags available (only showing tags with resources)
+              </div>
             </div>
-            
+
             {/* Desktop Filter Button */}
             <Button
               variant="outline"
@@ -218,7 +227,7 @@ export default function ResourcesPage() {
               className="hidden sm:flex items-center gap-2"
             >
               <Filter className="w-4 h-4" />
-              Advanced Filters
+              Filter by Tags ({availableTagsCount} available)
             </Button>
           </div>
 
@@ -234,10 +243,9 @@ export default function ResourcesPage() {
               <div className="bg-white rounded-lg shadow-sm border p-8">
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No Resources Found</h3>
                 <p className="text-gray-500 mb-4">
-                  {selectedTags.length > 0 || searchTerm 
+                  {selectedTags.length > 0 || searchTerm
                     ? "Try adjusting your filters or search terms."
-                    : "No resources have been added yet."
-                  }
+                    : "No resources have been added yet."}
                 </p>
                 {(selectedTags.length > 0 || searchTerm) && (
                   <Button onClick={clearAllFilters} variant="outline">
