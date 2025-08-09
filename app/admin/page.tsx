@@ -362,7 +362,7 @@ export default function AdminPage() {
                   Add Resource
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-[95vw] w-full max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>{editingResource ? "Edit Resource" : "Add New Resource"}</DialogTitle>
                   {editingResource && (
@@ -377,9 +377,9 @@ export default function AdminPage() {
 
                 <form action={handleResourceSubmit} className="space-y-6">
                   {/* Main Content Grid */}
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
                     {/* Left Column - Basic Info */}
-                    <div className="lg:col-span-2 space-y-4">
+                    <div className="lg:col-span-3 space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="submitted_by">Submitted By</Label>
@@ -452,7 +452,7 @@ export default function AdminPage() {
                     </div>
 
                     {/* Right Column - Tags */}
-                    <div className="lg:col-span-1">
+                    <div className="lg:col-span-2">
                       <div className="sticky top-0">
                         <div className="flex items-center justify-between mb-3">
                           <Label className="text-base font-medium">Tags</Label>
@@ -525,7 +525,7 @@ export default function AdminPage() {
                           </div>
                         )}
 
-                        <div className="max-h-[60vh] overflow-y-auto border rounded-md bg-gray-50 p-3">
+                        <div className="max-h-[60vh] overflow-y-auto border rounded-md bg-gray-50 p-4">
                           <ThreeLevelTagSelector
                             hierarchy={tagHierarchy}
                             defaultValues={editingResource?.tags?.map((t) => t.tag_id) || []}
