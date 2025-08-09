@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import type { ResourceWithTags, Tag } from "@/lib/db"
 import { ResourceCard } from "@/components/resource-card"
-import { Plus, TagIcon, Eye, ExternalLink, Sparkles, Loader2, AlertCircle } from "lucide-react"
+import { Plus, TagIcon, Eye, ExternalLink, Loader2, AlertCircle, Lightbulb } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -19,6 +19,12 @@ interface TagSuggestion {
   reasoning: string
   category: string
   subcategory: string
+}
+
+interface SuggestionResponse {
+  suggestions: TagSuggestion[]
+  aiModel?: string
+  note?: string
 }
 
 export default function AdminPage() {
@@ -38,6 +44,7 @@ export default function AdminPage() {
   const [tagSuggestions, setTagSuggestions] = useState<TagSuggestion[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [suggestionError, setSuggestionError] = useState<string | null>(null)
+  const [suggestionInfo, setSuggestionInfo] = useState<string | null>(null)
 
   useEffect(() => {
     fetchResources()
@@ -51,6 +58,7 @@ export default function AdminPage() {
       setTagSuggestions([])
       setShowSuggestions(false)
       setSuggestionError(null)
+      setSuggestionInfo(null)
     }
   }, [isResourceDialogOpen, editingResource])
 
@@ -125,6 +133,7 @@ export default function AdminPage() {
     setIsSuggestingTags(true)
     setTagSuggestions([])
     setSuggestionError(null)
+    setSuggestionInfo(null)
 
     try {
       // Get current form values
@@ -155,7 +164,7 @@ export default function AdminPage() {
         body: JSON.stringify(resourceData),
       })
 
-      const data = await response.json()
+      const data: SuggestionResponse = await response.json()
 
       if (data.error) {
         setSuggestionError(data.error)
@@ -165,6 +174,11 @@ export default function AdminPage() {
       if (data.suggestions && data.suggestions.length > 0) {
         setTagSuggestions(data.suggestions)
         setShowSuggestions(true)
+
+        // Show info about the suggestion method
+        if (data.note) {
+          setSuggestionInfo(data.note)
+        }
 
         // Auto-select high-confidence suggestions
         const highConfidenceTags = data.suggestions
@@ -177,7 +191,7 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error("Error suggesting tags:", error)
-      setSuggestionError("Failed to connect to AI service. Please try again.")
+      setSuggestionError("Failed to generate suggestions. Please try again.")
     } finally {
       setIsSuggestingTags(false)
     }
@@ -227,6 +241,7 @@ export default function AdminPage() {
       setTagSuggestions([])
       setShowSuggestions(false)
       setSuggestionError(null)
+      setSuggestionInfo(null)
       fetchResources()
     } catch (error) {
       console.error("Error saving resource:", error)
@@ -563,12 +578,12 @@ export default function AdminPage() {
                             size="sm"
                             onClick={handleSuggestTags}
                             disabled={isSuggestingTags}
-                            className="text-xs bg-gradient-to-r from-purple-500 to-blue-500 text-white border-0 hover:from-purple-600 hover:to-blue-600"
+                            className="text-xs bg-gradient-to-r from-blue-500 to-green-500 text-white border-0 hover:from-blue-600 hover:to-green-600"
                           >
                             {isSuggestingTags ? (
                               <Loader2 className="w-3 h-3 mr-1 animate-spin" />
                             ) : (
-                              <Sparkles className="w-3 h-3 mr-1" />
+                              <Lightbulb className="w-3 h-3 mr-1" />
                             )}
                             Suggest Tags
                           </Button>
@@ -590,24 +605,35 @@ export default function AdminPage() {
                         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
                           <div className="flex items-center gap-2 text-red-800">
                             <AlertCircle className="w-4 h-4" />
-                            <span className="text-sm font-medium">AI Suggestion Error</span>
+                            <span className="text-sm font-medium">Suggestion Error</span>
                           </div>
                           <p className="text-red-700 text-xs mt-1">{suggestionError}</p>
                         </div>
                       )}
 
-                      {/* AI Suggestions Panel */}
+                      {/* Info Display */}
+                      {suggestionInfo && (
+                        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                          <div className="flex items-center gap-2 text-blue-800">
+                            <Lightbulb className="w-4 h-4" />
+                            <span className="text-sm font-medium">Smart Suggestions</span>
+                          </div>
+                          <p className="text-blue-700 text-xs mt-1">{suggestionInfo}</p>
+                        </div>
+                      )}
+
+                      {/* Tag Suggestions Panel */}
                       {showSuggestions && tagSuggestions.length > 0 && (
-                        <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-md">
+                        <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-md">
                           <div className="flex items-center gap-2 mb-2">
-                            <Sparkles className="w-4 h-4 text-purple-600" />
-                            <h4 className="font-medium text-purple-900">AI Suggestions (Grok-3)</h4>
+                            <Lightbulb className="w-4 h-4 text-blue-600" />
+                            <h4 className="font-medium text-blue-900">Smart Tag Suggestions</h4>
                             <Button
                               type="button"
                               variant="ghost"
                               size="sm"
                               onClick={() => setShowSuggestions(false)}
-                              className="ml-auto h-6 w-6 p-0 text-purple-600 hover:text-purple-800"
+                              className="ml-auto h-6 w-6 p-0 text-blue-600 hover:text-blue-800"
                             >
                               ×
                             </Button>
@@ -619,12 +645,12 @@ export default function AdminPage() {
                                 <div key={index} className="flex items-center justify-between text-xs">
                                   <div className="flex-1">
                                     <div className="flex items-center gap-2">
-                                      <span className="font-medium text-purple-800">{suggestion.tagName}</span>
-                                      <span className="text-purple-600">
+                                      <span className="font-medium text-blue-800">{suggestion.tagName}</span>
+                                      <span className="text-blue-600">
                                         ({Math.round(suggestion.confidence * 100)}%)
                                       </span>
                                     </div>
-                                    <div className="text-purple-600 text-xs truncate">{suggestion.reasoning}</div>
+                                    <div className="text-blue-600 text-xs truncate">{suggestion.reasoning}</div>
                                   </div>
                                   <Button
                                     type="button"
