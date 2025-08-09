@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
+import { ThreeLevelTagSelector } from '@/components/three-level-tag-selector'
 
 export default function AdminPage() {
   const [resources, setResources] = useState<ResourceWithTags[]>([])
@@ -22,6 +23,7 @@ export default function AdminPage() {
   const [newTagName, setNewTagName] = useState('')
   const [newTagColor, setNewTagColor] = useState('#3B82F6')
   const [isAddingTag, setIsAddingTag] = useState(false)
+  const [tagHierarchy, setTagHierarchy] = useState<any>({})
 
   useEffect(() => {
     fetchResources()
@@ -80,15 +82,17 @@ export default function AdminPage() {
       
       const data = await response.json()
       
-      if (Array.isArray(data)) {
-        setTags(data)
+      if (data.flat && Array.isArray(data.flat)) {
+        setTags(data.flat)
+        setTagHierarchy(data.hierarchy || {})
       } else {
-        console.error('Tags API returned non-array:', data)
         setTags([])
+        setTagHierarchy({})
       }
     } catch (error) {
       console.error('Error fetching tags:', error)
-      setTags([]) // Ensure tags is always an array
+      setTags([])
+      setTagHierarchy({})
     }
   }
 
@@ -101,6 +105,7 @@ export default function AdminPage() {
         description: formData.get('description'),
         url_link: formData.get('url_link'),
         download_link: formData.get('download_link'),
+        linkedin_profile: formData.get('linkedin_profile'),
         tagIds: formData.getAll('tags').map(id => parseInt(id as string))
       }
 
@@ -163,7 +168,14 @@ export default function AdminPage() {
         throw new Error(`HTTP ${response.status}`)
       }
 
-      setIsTagDialogOpen(false)
+      // Remove this line: setIsTagDialogOpen(false)
+      
+      // Clear the form after successful submission
+      const form = document.querySelector('form[action="handleTagSubmit"]') as HTMLFormElement
+      if (form) {
+        form.reset()
+      }
+      
       fetchTags()
     } catch (error) {
       console.error('Error creating tag:', error)
@@ -193,6 +205,24 @@ export default function AdminPage() {
       console.error('Error creating tag:', error)
       alert('Failed to create tag. Please try again.')
     }
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
+  }
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
   }
 
   if (loading) {
@@ -252,44 +282,46 @@ export default function AdminPage() {
                   Manage Tags
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Add New Tag</DialogTitle>
+                  <DialogTitle>Tag Management</DialogTitle>
                 </DialogHeader>
-                <form action={handleTagSubmit} className="space-y-4">
-                  <div>
-                    <Label htmlFor="tag-name">Tag Name</Label>
-                    <Input id="tag-name" name="name" required />
-                  </div>
-                  <div>
-                    <Label htmlFor="tag-color">Color</Label>
-                    <Input id="tag-color" name="color" type="color" defaultValue="#3B82F6" />
-                  </div>
-                  <Button type="submit">Create Tag</Button>
-                </form>
                 
-                <div className="mt-6">
-                  <h3 className="font-medium mb-3">Existing Tags ({tags.length})</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {tags.map((tag) => (
-                      <span
-                        key={tag.id}
-                        className="px-3 py-1 rounded-full text-sm font-medium"
-                        style={{ 
-                          backgroundColor: `${tag.color}20`, 
-                          color: tag.color,
-                          border: `1px solid ${tag.color}40`
-                        }}
-                      >
-                        {tag.name}
-                      </span>
-                    ))}
+                <div className="space-y-6">
+                  {/* Add New Tag Form */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-medium mb-3">Add New Tag</h3>
+                    <form action={handleTagSubmit} className="space-y-4" key={tags.length}>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="tag-name">Tag Name</Label>
+                          <Input id="tag-name" name="name" required />
+                        </div>
+                        <div>
+                          <Label htmlFor="tag-color">Color</Label>
+                          <Input id="tag-color" name="color" type="color" defaultValue="#3B82F6" />
+                        </div>
+                      </div>
+                      <Button type="submit">Create Tag</Button>
+                    </form>
                   </div>
-                  {tags.length === 0 && (
-                    <p className="text-gray-500 text-sm">No tags created yet.</p>
-                  )}
+                  
+                  {/* Hierarchical Tag Display */}
+                  <div>
+                    <h3 className="font-medium mb-3">All Tags ({tags.length} total)</h3>
+                    <ThreeLevelTagSelector
+                      hierarchy={tagHierarchy}
+                      selectedTags={[]}
+                      onTagChange={() => {}} // Read-only display
+                    />
+                    
+                    {Object.keys(tagHierarchy).length === 0 && (
+                      <p className="text-gray-500 text-sm">No tags created yet.</p>
+                    )}
+                  </div>
                 </div>
               </DialogContent>
+
             </Dialog>
 
             <Dialog open={isResourceDialogOpen} onOpenChange={setIsResourceDialogOpen}>
@@ -304,6 +336,14 @@ export default function AdminPage() {
                   <DialogTitle>
                     {editingResource ? 'Edit Resource' : 'Add New Resource'}
                   </DialogTitle>
+                  {editingResource && (
+                    <div className="text-sm text-gray-500 mt-2">
+                      <p>Originally submitted: {formatDate(editingResource.date)}</p>
+                      {editingResource.updated_at && editingResource.updated_at !== editingResource.created_at && (
+                        <p>Last updated: {formatDateTime(editingResource.updated_at)}</p>
+                      )}
+                    </div>
+                  )}
                 </DialogHeader>
                 <form action={handleResourceSubmit} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -317,7 +357,9 @@ export default function AdminPage() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="date">Date</Label>
+                      <Label htmlFor="date">
+                        {editingResource ? 'Date Submitted (Original)' : 'Date Submitted'}
+                      </Label>
                       <Input 
                         id="date" 
                         name="date" 
@@ -325,6 +367,11 @@ export default function AdminPage() {
                         defaultValue={editingResource?.date}
                         required 
                       />
+                      {editingResource && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          This preserves the original submission date
+                        </p>
+                      )}
                     </div>
                   </div>
                   
@@ -367,6 +414,20 @@ export default function AdminPage() {
                         defaultValue={editingResource?.download_link || ''}
                       />
                     </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="linkedin_profile">LinkedIn Profile (Optional)</Label>
+                    <Input 
+                      id="linkedin_profile" 
+                      name="linkedin_profile" 
+                      type="url"
+                      placeholder="https://linkedin.com/in/username (optional)"
+                      defaultValue={editingResource?.linkedin_profile || ''}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Leave blank if not applicable
+                    </p>
                   </div>
                   
                   <div>
@@ -433,26 +494,14 @@ export default function AdminPage() {
                       </div>
                     )}
                     
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                      {tags.map((tag) => (
-                        <div key={tag.id} className="flex items-center space-x-2">
-                          <Checkbox 
-                            id={`tag-${tag.id}`}
-                            name="tags"
-                            value={tag.id}
-                            defaultChecked={editingResource?.tags?.some(t => t.id === tag.id)}
-                          />
-                          <Label 
-                            htmlFor={`tag-${tag.id}`}
-                            className="text-sm"
-                            style={{ color: tag.color }}
-                          >
-                            {tag.name}
-                          </Label>
-                        </div>
-                      ))}
+                    <div className="max-h-96 overflow-y-auto">
+                      <ThreeLevelTagSelector
+                        hierarchy={tagHierarchy}
+                        defaultValues={editingResource?.tags?.map(t => t.tag_id) || []}
+                      />
                     </div>
-                    {tags.length === 0 && (
+                    
+                    {Object.keys(tagHierarchy).length === 0 && (
                       <p className="text-sm text-gray-500 mt-2">
                         No tags available. Create your first tag using the "Add Tag" button above.
                       </p>
