@@ -313,7 +313,7 @@ export default function AdminPage() {
                   Manage Tags
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+              <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Tag Management</DialogTitle>
                 </DialogHeader>
@@ -340,11 +340,13 @@ export default function AdminPage() {
                   {/* Hierarchical Tag Display */}
                   <div>
                     <h3 className="font-medium mb-3">All Tags ({totalTagsCount} total)</h3>
-                    <ThreeLevelTagSelector
-                      hierarchy={tagHierarchy}
-                      selectedTags={[]}
-                      onTagChange={() => {}} // Read-only display
-                    />
+                    <div className="max-h-[50vh] overflow-y-auto">
+                      <ThreeLevelTagSelector
+                        hierarchy={tagHierarchy}
+                        selectedTags={[]}
+                        onTagChange={() => {}} // Read-only display
+                      />
+                    </div>
 
                     {Object.keys(tagHierarchy).length === 0 && (
                       <p className="text-gray-500 text-sm">No tags created yet.</p>
@@ -362,11 +364,11 @@ export default function AdminPage() {
                   Add Resource
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-[95vw] w-full max-h-[90vh] overflow-y-auto">
+              <DialogContent>
                 <DialogHeader>
                   <DialogTitle>{editingResource ? "Edit Resource" : "Add New Resource"}</DialogTitle>
                   {editingResource && (
-                    <div className="text-sm text-gray-500 mt-2 flex gap-4">
+                    <div className="text-sm text-gray-500 mt-2 flex flex-col sm:flex-row sm:gap-4">
                       <span>Originally submitted: {formatDate(editingResource.date)}</span>
                       {editingResource.updated_at && editingResource.updated_at !== editingResource.created_at && (
                         <span>Last updated: {formatDateTime(editingResource.updated_at)}</span>
@@ -376,10 +378,10 @@ export default function AdminPage() {
                 </DialogHeader>
 
                 <form action={handleResourceSubmit} className="space-y-6">
-                  {/* Main Content Grid */}
-                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                  {/* Main Content Grid - Responsive Layout */}
+                  <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
                     {/* Left Column - Basic Info */}
-                    <div className="lg:col-span-3 space-y-4">
+                    <div className="xl:col-span-3 space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="submitted_by">Submitted By</Label>
@@ -451,92 +453,90 @@ export default function AdminPage() {
                       </div>
                     </div>
 
-                    {/* Right Column - Tags */}
-                    <div className="lg:col-span-2">
-                      <div className="sticky top-0">
-                        <div className="flex items-center justify-between mb-3">
-                          <Label className="text-base font-medium">Tags</Label>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setIsAddingTag(!isAddingTag)}
-                            className="text-xs"
-                          >
-                            <Plus className="w-3 h-3 mr-1" />
-                            Add Tag
-                          </Button>
-                        </div>
+                    {/* Right Column - Tags (stacks below on mobile) */}
+                    <div className="xl:col-span-2 order-last xl:order-none">
+                      <div className="flex items-center justify-between mb-3">
+                        <Label className="text-base font-medium">Tags</Label>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIsAddingTag(!isAddingTag)}
+                          className="text-xs"
+                        >
+                          <Plus className="w-3 h-3 mr-1" />
+                          Add Tag
+                        </Button>
+                      </div>
 
-                        {isAddingTag && (
-                          <div className="mb-4 p-3 bg-gray-50 rounded-md border">
-                            <div className="space-y-2">
-                              <div>
-                                <Label htmlFor="quick-tag-name" className="text-xs">
-                                  Tag Name
+                      {isAddingTag && (
+                        <div className="mb-4 p-3 bg-gray-50 rounded-md border">
+                          <div className="space-y-2">
+                            <div>
+                              <Label htmlFor="quick-tag-name" className="text-xs">
+                                Tag Name
+                              </Label>
+                              <Input
+                                id="quick-tag-name"
+                                value={newTagName}
+                                onChange={(e) => setNewTagName(e.target.value)}
+                                placeholder="Enter tag name"
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <div className="flex-1">
+                                <Label htmlFor="quick-tag-color" className="text-xs">
+                                  Color
                                 </Label>
                                 <Input
-                                  id="quick-tag-name"
-                                  value={newTagName}
-                                  onChange={(e) => setNewTagName(e.target.value)}
-                                  placeholder="Enter tag name"
-                                  className="h-8 text-sm"
+                                  id="quick-tag-color"
+                                  type="color"
+                                  value={newTagColor}
+                                  onChange={(e) => setNewTagColor(e.target.value)}
+                                  className="h-8"
                                 />
                               </div>
-                              <div className="flex gap-2">
-                                <div className="flex-1">
-                                  <Label htmlFor="quick-tag-color" className="text-xs">
-                                    Color
-                                  </Label>
-                                  <Input
-                                    id="quick-tag-color"
-                                    type="color"
-                                    value={newTagColor}
-                                    onChange={(e) => setNewTagColor(e.target.value)}
-                                    className="h-8"
-                                  />
-                                </div>
-                                <div className="flex gap-1 items-end">
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    onClick={handleQuickTagAdd}
-                                    disabled={!newTagName.trim()}
-                                    className="h-8 px-2"
-                                  >
-                                    Add
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                      setIsAddingTag(false)
-                                      setNewTagName("")
-                                      setNewTagColor("#3B82F6")
-                                    }}
-                                    className="h-8 px-2"
-                                  >
-                                    Cancel
-                                  </Button>
-                                </div>
+                              <div className="flex gap-1 items-end">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onClick={handleQuickTagAdd}
+                                  disabled={!newTagName.trim()}
+                                  className="h-8 px-2"
+                                >
+                                  Add
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setIsAddingTag(false)
+                                    setNewTagName("")
+                                    setNewTagColor("#3B82F6")
+                                  }}
+                                  className="h-8 px-2"
+                                >
+                                  Cancel
+                                </Button>
                               </div>
                             </div>
                           </div>
-                        )}
-
-                        <div className="max-h-[60vh] overflow-y-auto border rounded-md bg-gray-50 p-4">
-                          <ThreeLevelTagSelector
-                            hierarchy={tagHierarchy}
-                            defaultValues={editingResource?.tags?.map((t) => t.tag_id) || []}
-                          />
-
-                          {Object.keys(tagHierarchy).length === 0 && (
-                            <p className="text-sm text-gray-500 text-center py-4">
-                              No tags available. Create your first tag using the "Add Tag" button above.
-                            </p>
-                          )}
                         </div>
+                      )}
+
+                      <div className="max-h-[50vh] xl:max-h-[60vh] overflow-y-auto border rounded-md bg-gray-50 p-4">
+                        <ThreeLevelTagSelector
+                          hierarchy={tagHierarchy}
+                          defaultValues={editingResource?.tags?.map((t) => t.tag_id) || []}
+                        />
+
+                        {Object.keys(tagHierarchy).length === 0 && (
+                          <p className="text-sm text-gray-500 text-center py-4">
+                            No tags available. Create your first tag using the "Add Tag" button above.
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
