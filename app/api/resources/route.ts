@@ -3,12 +3,6 @@ import { sql } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
   try {
-    // Check if DATABASE_URL exists
-    if (!process.env.DATABASE_URL) {
-      console.error('DATABASE_URL environment variable is not set')
-      return NextResponse.json({ error: 'Database configuration missing' }, { status: 500 })
-    }
-
     const { searchParams } = new URL(request.url)
     const tags = searchParams.get('tags')?.split(',').filter(Boolean) || []
     const sortBy = searchParams.get('sortBy') || 'date'
@@ -43,20 +37,28 @@ export async function GET(request: NextRequest) {
         SELECT DISTINCT r.*, 
                COALESCE(
                  JSON_AGG(
-                   JSON_BUILD_OBJECT('id', t.id, 'name', t.name, 'color', t.color)
-                 ) FILTER (WHERE t.id IS NOT NULL), 
+                   JSON_BUILD_OBJECT(
+                     'tag_id', cth.tag_id,
+                     'tag_name', cth.tag_name,
+                     'tag_slug', cth.tag_slug,
+                     'category_name', cth.category_name,
+                     'sub_category_name', cth.sub_category_name,
+                     'effective_color', cth.effective_color,
+                     'full_path', cth.full_path
+                   )
+                 ) FILTER (WHERE cth.tag_id IS NOT NULL), 
                  '[]'::json
                ) as tags
         FROM resources r
         LEFT JOIN resource_tags rt ON r.id = rt.resource_id
-        LEFT JOIN tags t ON rt.tag_id = t.id
+        LEFT JOIN complete_tag_hierarchy cth ON rt.tag_id = cth.tag_id
         WHERE r.id IN (
           SELECT DISTINCT rt2.resource_id 
           FROM resource_tags rt2 
-          JOIN tags t2 ON rt2.tag_id = t2.id 
-          WHERE t2.name = ANY(${tags})
+          JOIN complete_tag_hierarchy cth2 ON rt2.tag_id = cth2.tag_id
+          WHERE cth2.tag_name = ANY(${tags})
         )
-        GROUP BY r.id, r.date, r.title, r.submitted_by, r.created_at
+        GROUP BY r.id
         ${orderByClause}
       `
     } else {
@@ -65,14 +67,22 @@ export async function GET(request: NextRequest) {
         SELECT r.*, 
                COALESCE(
                  JSON_AGG(
-                   JSON_BUILD_OBJECT('id', t.id, 'name', t.name, 'color', t.color)
-                 ) FILTER (WHERE t.id IS NOT NULL), 
+                   JSON_BUILD_OBJECT(
+                     'tag_id', cth.tag_id,
+                     'tag_name', cth.tag_name,
+                     'tag_slug', cth.tag_slug,
+                     'category_name', cth.category_name,
+                     'sub_category_name', cth.sub_category_name,
+                     'effective_color', cth.effective_color,
+                     'full_path', cth.full_path
+                   )
+                 ) FILTER (WHERE cth.tag_id IS NOT NULL), 
                  '[]'::json
                ) as tags
         FROM resources r
         LEFT JOIN resource_tags rt ON r.id = rt.resource_id
-        LEFT JOIN tags t ON rt.tag_id = t.id
-        GROUP BY r.id, r.date, r.title, r.submitted_by, r.created_at
+        LEFT JOIN complete_tag_hierarchy cth ON rt.tag_id = cth.tag_id
+        GROUP BY r.id
         ${orderByClause}
       `
     }
@@ -90,12 +100,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { submitted_by, date, title, description, url_link, download_link, tagIds } = body
+    const { submitted_by, date, title, description, url_link, download_link, linkedin_profile, tagIds } = body
     
     // Insert resource
     const [resource] = await sql`
-      INSERT INTO resources (submitted_by, date, title, description, url_link, download_link)
-      VALUES (${submitted_by}, ${date}, ${title}, ${description}, ${url_link}, ${download_link})
+      INSERT INTO resources (submitted_by, date, title, description, url_link, download_link, linkedin_profile)
+      VALUES (${submitted_by}, ${date}, ${title}, ${description}, ${url_link}, ${download_link}, ${linkedin_profile})
       RETURNING *
     `
     

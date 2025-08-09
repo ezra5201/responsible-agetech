@@ -132,17 +132,8 @@ export default function HomePage() {
           </Link>
         </div>
         
-        <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-          <h3 className="font-semibold text-blue-900 mb-2">Embed in Squarespace</h3>
-          <div className="text-sm text-blue-700 text-left">
-            <p className="mb-2">1. Copy your app URL: <code className="bg-blue-100 px-1 rounded text-xs">{typeof window !== 'undefined' ? window.location.origin : 'https://your-app.vercel.app'}/resources</code></p>
-            <p className="mb-2">2. In Squarespace, add a Code Block</p>
-            <p className="mb-2">3. Paste this iframe code:</p>
-            <code className="block bg-blue-100 p-2 rounded text-xs break-all">
-              {`<iframe src="${typeof window !== 'undefined' ? window.location.origin : 'https://your-app.vercel.app'}/resources" width="100%" height="800px" frameborder="0" style="border-radius: 8px;"></iframe>`}
-            </code>
-          </div>
-        </div>
+        {/* Embed in Squarespace */}
+        {/* Removed the "Embed in Squarespace" section as per the updates */}
       </div>
     </div>
   )
