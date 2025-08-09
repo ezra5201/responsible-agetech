@@ -4,13 +4,22 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import type { ResourceWithTags, Tag } from "@/lib/db"
 import { ResourceCard } from "@/components/resource-card"
-import { Plus, TagIcon, Eye, ExternalLink } from "lucide-react"
+import { Plus, TagIcon, Eye, ExternalLink, Sparkles, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ThreeLevelTagSelector } from "@/components/three-level-tag-selector"
+
+interface TagSuggestion {
+  tagId: number
+  tagName: string
+  confidence: number
+  reasoning: string
+  category: string
+  subcategory: string
+}
 
 export default function AdminPage() {
   const [resources, setResources] = useState<ResourceWithTags[]>([])
@@ -24,11 +33,24 @@ export default function AdminPage() {
   const [newTagColor, setNewTagColor] = useState("#3B82F6")
   const [isAddingTag, setIsAddingTag] = useState(false)
   const [tagHierarchy, setTagHierarchy] = useState<any>({})
+  const [selectedTags, setSelectedTags] = useState<number[]>([])
+  const [isSuggestingTags, setIsSuggestingTags] = useState(false)
+  const [tagSuggestions, setTagSuggestions] = useState<TagSuggestion[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
 
   useEffect(() => {
     fetchResources()
     fetchTags()
   }, [])
+
+  // Reset selected tags when dialog opens/closes or editing resource changes
+  useEffect(() => {
+    if (isResourceDialogOpen) {
+      setSelectedTags(editingResource?.tags?.map((t) => t.tag_id) || [])
+      setTagSuggestions([])
+      setShowSuggestions(false)
+    }
+  }, [isResourceDialogOpen, editingResource])
 
   const fetchResources = async () => {
     try {
@@ -97,6 +119,69 @@ export default function AdminPage() {
     }
   }
 
+  const handleSuggestTags = async () => {
+    setIsSuggestingTags(true)
+    setTagSuggestions([])
+
+    try {
+      // Get current form values
+      const form = document.querySelector("form") as HTMLFormElement
+      if (!form) return
+
+      const formData = new FormData(form)
+      const resourceData = {
+        title: formData.get("title") as string,
+        description: formData.get("description") as string,
+        submitted_by: formData.get("submitted_by") as string,
+        url_link: formData.get("url_link") as string,
+      }
+
+      const response = await fetch("/api/suggest-tags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(resourceData),
+      })
+
+      const data = await response.json()
+
+      if (data.error) {
+        alert(`Error suggesting tags: ${data.error}`)
+        return
+      }
+
+      if (data.suggestions && data.suggestions.length > 0) {
+        setTagSuggestions(data.suggestions)
+        setShowSuggestions(true)
+
+        // Auto-select high-confidence suggestions
+        const highConfidenceTags = data.suggestions
+          .filter((s: TagSuggestion) => s.confidence >= 0.8)
+          .map((s: TagSuggestion) => s.tagId)
+
+        setSelectedTags((prev) => [...new Set([...prev, ...highConfidenceTags])])
+      } else {
+        alert("No relevant tag suggestions found. Try adding more descriptive content to the form fields.")
+      }
+    } catch (error) {
+      console.error("Error suggesting tags:", error)
+      alert("Failed to suggest tags. Please try again.")
+    } finally {
+      setIsSuggestingTags(false)
+    }
+  }
+
+  const handleTagChange = (tagId: number, checked: boolean) => {
+    setSelectedTags((prev) => (checked ? [...prev, tagId] : prev.filter((id) => id !== tagId)))
+  }
+
+  const applySuggestion = (suggestion: TagSuggestion) => {
+    setSelectedTags((prev) => [...new Set([...prev, suggestion.tagId])])
+  }
+
+  const removeSuggestion = (suggestion: TagSuggestion) => {
+    setSelectedTags((prev) => prev.filter((id) => id !== suggestion.tagId))
+  }
+
   const handleResourceSubmit = async (formData: FormData) => {
     try {
       const data = {
@@ -107,11 +192,10 @@ export default function AdminPage() {
         url_link: formData.get("url_link"),
         download_link: formData.get("download_link"),
         linkedin_profile: formData.get("linkedin_profile"),
-        tagIds: formData.getAll("tags").map((id) => Number.parseInt(id as string)),
+        tagIds: selectedTags,
       }
 
       const url = editingResource ? `/api/resources/${editingResource.id}` : "/api/resources"
-
       const method = editingResource ? "PUT" : "POST"
 
       const response = await fetch(url, {
@@ -126,6 +210,9 @@ export default function AdminPage() {
 
       setIsResourceDialogOpen(false)
       setEditingResource(null)
+      setSelectedTags([])
+      setTagSuggestions([])
+      setShowSuggestions(false)
       fetchResources()
     } catch (error) {
       console.error("Error saving resource:", error)
@@ -166,8 +253,6 @@ export default function AdminPage() {
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`)
       }
-
-      // Remove this line: setIsTagDialogOpen(false)
 
       // Clear the form after successful submission
       const form = document.querySelector('form[action="handleTagSubmit"]') as HTMLFormElement
@@ -457,17 +542,82 @@ export default function AdminPage() {
                     <div className="xl:col-span-2 order-last xl:order-none">
                       <div className="flex items-center justify-between mb-3">
                         <Label className="text-base font-medium">Tags</Label>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setIsAddingTag(!isAddingTag)}
-                          className="text-xs"
-                        >
-                          <Plus className="w-3 h-3 mr-1" />
-                          Add Tag
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleSuggestTags}
+                            disabled={isSuggestingTags}
+                            className="text-xs bg-gradient-to-r from-purple-500 to-blue-500 text-white border-0 hover:from-purple-600 hover:to-blue-600"
+                          >
+                            {isSuggestingTags ? (
+                              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                            ) : (
+                              <Sparkles className="w-3 h-3 mr-1" />
+                            )}
+                            Suggest Tags
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsAddingTag(!isAddingTag)}
+                            className="text-xs"
+                          >
+                            <Plus className="w-3 h-3 mr-1" />
+                            Add Tag
+                          </Button>
+                        </div>
                       </div>
+
+                      {/* AI Suggestions Panel */}
+                      {showSuggestions && tagSuggestions.length > 0 && (
+                        <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-md">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Sparkles className="w-4 h-4 text-purple-600" />
+                            <h4 className="font-medium text-purple-900">AI Suggestions</h4>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setShowSuggestions(false)}
+                              className="ml-auto h-6 w-6 p-0 text-purple-600 hover:text-purple-800"
+                            >
+                              ×
+                            </Button>
+                          </div>
+                          <div className="space-y-2 max-h-32 overflow-y-auto">
+                            {tagSuggestions.map((suggestion, index) => {
+                              const isSelected = selectedTags.includes(suggestion.tagId)
+                              return (
+                                <div key={index} className="flex items-center justify-between text-xs">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-medium text-purple-800">{suggestion.tagName}</span>
+                                      <span className="text-purple-600">
+                                        ({Math.round(suggestion.confidence * 100)}%)
+                                      </span>
+                                    </div>
+                                    <div className="text-purple-600 text-xs truncate">{suggestion.reasoning}</div>
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant={isSelected ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() =>
+                                      isSelected ? removeSuggestion(suggestion) : applySuggestion(suggestion)
+                                    }
+                                    className="ml-2 h-6 px-2 text-xs"
+                                  >
+                                    {isSelected ? "✓" : "+"}
+                                  </Button>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
 
                       {isAddingTag && (
                         <div className="mb-4 p-3 bg-gray-50 rounded-md border">
@@ -529,7 +679,9 @@ export default function AdminPage() {
                       <div className="max-h-[50vh] xl:max-h-[60vh] overflow-y-auto border rounded-md bg-gray-50 p-4">
                         <ThreeLevelTagSelector
                           hierarchy={tagHierarchy}
-                          defaultValues={editingResource?.tags?.map((t) => t.tag_id) || []}
+                          selectedTags={selectedTags}
+                          onTagChange={handleTagChange}
+                          defaultValues={[]}
                         />
 
                         {Object.keys(tagHierarchy).length === 0 && (
