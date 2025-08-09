@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import type { ResourceWithTags, Tag } from "@/lib/db"
 import { ResourceCard } from "@/components/resource-card"
-import { Plus, TagIcon } from "lucide-react"
+import { Plus, TagIcon, Eye, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -285,7 +286,26 @@ export default function AdminPage() {
             <h1 className="text-3xl font-bold text-gray-900">Resource Management</h1>
             <p className="text-sm text-gray-600 mt-1">Full taxonomy available ({totalTagsCount} total tags)</p>
           </div>
-          <div className="flex gap-4">
+          <div className="flex gap-3">
+            {/* View Public Button */}
+            <Link href="/resources">
+              <Button variant="outline" className="flex items-center gap-2 bg-transparent">
+                <Eye className="w-4 h-4" />
+                View Public
+              </Button>
+            </Link>
+
+            {/* View Live Button */}
+            <Button
+              variant="outline"
+              className="flex items-center gap-2 bg-transparent"
+              onClick={() => window.open("https://responsible-agetech.org/ressources", "_blank")}
+            >
+              <ExternalLink className="w-4 h-4" />
+              View Live
+            </Button>
+
+            {/* Manage Tags Button */}
             <Dialog open={isTagDialogOpen} onOpenChange={setIsTagDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline">
@@ -334,6 +354,7 @@ export default function AdminPage() {
               </DialogContent>
             </Dialog>
 
+            {/* Add Resource Button */}
             <Dialog open={isResourceDialogOpen} onOpenChange={setIsResourceDialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={() => setEditingResource(null)}>
