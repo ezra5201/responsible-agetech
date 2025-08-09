@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateObject } from "ai"
-import { openai } from "@ai-sdk/openai"
+import { xai } from "@ai-sdk/xai"
 import { z } from "zod"
 import { sql } from "@/lib/db"
 
@@ -19,6 +19,17 @@ const TagSuggestionSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const { title, description, submitted_by, url_link } = await request.json()
+
+    // Check if we have the required API key
+    if (!process.env.XAI_API_KEY) {
+      return NextResponse.json(
+        {
+          error: "AI service not configured. Please set up the XAI_API_KEY environment variable.",
+          suggestions: [],
+        },
+        { status: 500 },
+      )
+    }
 
     // Get all available tags from the hierarchy
     const hierarchyData = await sql`
@@ -60,11 +71,11 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Generate tag suggestions using AI
+    // Generate tag suggestions using xAI (Grok)
     const { object } = await generateObject({
-      model: openai("gpt-4o"),
+      model: xai("grok-3"),
       schema: TagSuggestionSchema,
-      system: `You are an expert content analyst specializing in academic and research resource categorization. 
+      system: `You are an expert content analyst specializing in academic and research resource categorization, particularly in aging, health, and technology research. 
 
 Your task is to analyze resource content and suggest the most relevant tags from the available taxonomy.
 
@@ -75,17 +86,18 @@ INSTRUCTIONS:
 1. Analyze the provided resource content carefully
 2. Suggest only tags that exist in the available taxonomy (use exact tag names)
 3. Focus on the most relevant and specific tags
-4. Provide confidence scores based on relevance
+4. Provide confidence scores based on relevance (0.0 to 1.0)
 5. Limit suggestions to 5-8 most relevant tags
 6. Consider academic disciplines, research methods, geographic regions, and content types
 7. Prioritize tags with confidence > 0.6
+8. Pay special attention to aging, health, technology, and geographic context
 
-Be precise and only suggest tags that truly match the content.`,
+Be precise and only suggest tags that truly match the content. Focus on academic and research relevance.`,
       prompt: `Analyze this resource and suggest relevant tags:
 
 ${contentToAnalyze}
 
-Suggest the most relevant tags from the available taxonomy, focusing on high-confidence matches.`,
+Suggest the most relevant tags from the available taxonomy, focusing on high-confidence matches that would help researchers find this resource.`,
     })
 
     // Filter suggestions by confidence and validate tag existence
@@ -115,16 +127,35 @@ Suggest the most relevant tags from the available taxonomy, focusing on high-con
         hasSubmitter: !!submitted_by,
         hasUrl: !!url_link,
       },
+      aiModel: "grok-3",
     })
   } catch (error) {
     console.error("Error generating tag suggestions:", error)
+
+    // Provide more specific error messages
+    let errorMessage = "Failed to generate tag suggestions"
+    let statusCode = 500
+
+    if (error instanceof Error) {
+      if (error.message.includes("API key")) {
+        errorMessage = "AI service authentication failed. Please check API key configuration."
+        statusCode = 401
+      } else if (error.message.includes("rate limit")) {
+        errorMessage = "AI service rate limit exceeded. Please try again in a moment."
+        statusCode = 429
+      } else if (error.message.includes("network") || error.message.includes("fetch")) {
+        errorMessage = "Network error connecting to AI service. Please try again."
+        statusCode = 503
+      }
+    }
+
     return NextResponse.json(
       {
-        error: "Failed to generate tag suggestions",
+        error: errorMessage,
         details: error instanceof Error ? error.message : "Unknown error",
         suggestions: [],
       },
-      { status: 500 },
+      { status: statusCode },
     )
   }
 }

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import type { ResourceWithTags, Tag } from "@/lib/db"
 import { ResourceCard } from "@/components/resource-card"
-import { Plus, TagIcon, Eye, ExternalLink, Sparkles, Loader2 } from "lucide-react"
+import { Plus, TagIcon, Eye, ExternalLink, Sparkles, Loader2, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -37,6 +37,7 @@ export default function AdminPage() {
   const [isSuggestingTags, setIsSuggestingTags] = useState(false)
   const [tagSuggestions, setTagSuggestions] = useState<TagSuggestion[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [suggestionError, setSuggestionError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchResources()
@@ -49,6 +50,7 @@ export default function AdminPage() {
       setSelectedTags(editingResource?.tags?.map((t) => t.tag_id) || [])
       setTagSuggestions([])
       setShowSuggestions(false)
+      setSuggestionError(null)
     }
   }, [isResourceDialogOpen, editingResource])
 
@@ -122,11 +124,15 @@ export default function AdminPage() {
   const handleSuggestTags = async () => {
     setIsSuggestingTags(true)
     setTagSuggestions([])
+    setSuggestionError(null)
 
     try {
       // Get current form values
       const form = document.querySelector("form") as HTMLFormElement
-      if (!form) return
+      if (!form) {
+        setSuggestionError("Could not access form data")
+        return
+      }
 
       const formData = new FormData(form)
       const resourceData = {
@@ -134,6 +140,13 @@ export default function AdminPage() {
         description: formData.get("description") as string,
         submitted_by: formData.get("submitted_by") as string,
         url_link: formData.get("url_link") as string,
+      }
+
+      // Check if we have enough content to analyze
+      const hasContent = resourceData.title?.trim() || resourceData.description?.trim()
+      if (!hasContent) {
+        setSuggestionError("Please add a title or description before requesting tag suggestions.")
+        return
       }
 
       const response = await fetch("/api/suggest-tags", {
@@ -145,7 +158,7 @@ export default function AdminPage() {
       const data = await response.json()
 
       if (data.error) {
-        alert(`Error suggesting tags: ${data.error}`)
+        setSuggestionError(data.error)
         return
       }
 
@@ -160,11 +173,11 @@ export default function AdminPage() {
 
         setSelectedTags((prev) => [...new Set([...prev, ...highConfidenceTags])])
       } else {
-        alert("No relevant tag suggestions found. Try adding more descriptive content to the form fields.")
+        setSuggestionError("No relevant tag suggestions found. Try adding more descriptive content to the form fields.")
       }
     } catch (error) {
       console.error("Error suggesting tags:", error)
-      alert("Failed to suggest tags. Please try again.")
+      setSuggestionError("Failed to connect to AI service. Please try again.")
     } finally {
       setIsSuggestingTags(false)
     }
@@ -213,6 +226,7 @@ export default function AdminPage() {
       setSelectedTags([])
       setTagSuggestions([])
       setShowSuggestions(false)
+      setSuggestionError(null)
       fetchResources()
     } catch (error) {
       console.error("Error saving resource:", error)
@@ -571,12 +585,23 @@ export default function AdminPage() {
                         </div>
                       </div>
 
+                      {/* Error Display */}
+                      {suggestionError && (
+                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                          <div className="flex items-center gap-2 text-red-800">
+                            <AlertCircle className="w-4 h-4" />
+                            <span className="text-sm font-medium">AI Suggestion Error</span>
+                          </div>
+                          <p className="text-red-700 text-xs mt-1">{suggestionError}</p>
+                        </div>
+                      )}
+
                       {/* AI Suggestions Panel */}
                       {showSuggestions && tagSuggestions.length > 0 && (
                         <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-md">
                           <div className="flex items-center gap-2 mb-2">
                             <Sparkles className="w-4 h-4 text-purple-600" />
-                            <h4 className="font-medium text-purple-900">AI Suggestions</h4>
+                            <h4 className="font-medium text-purple-900">AI Suggestions (Grok-3)</h4>
                             <Button
                               type="button"
                               variant="ghost"
