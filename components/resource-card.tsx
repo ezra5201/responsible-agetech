@@ -1,6 +1,8 @@
-import { ResourceWithTags } from '@/lib/db'
-import { resourceStyles, combineStyles } from '@/lib/styles'
-import { ExternalLink, Download, Calendar, User, Linkedin, Clock } from 'lucide-react'
+"use client"
+
+import type { ResourceWithTags } from "@/lib/db"
+import { resourceStyles, combineStyles } from "@/lib/styles"
+import { ExternalLink, Download, Calendar, User, Linkedin, Clock } from "lucide-react"
 
 interface ResourceCardProps {
   resource: ResourceWithTags
@@ -17,42 +19,42 @@ export function ResourceCard({ resource, showActions = false, onEdit, onDelete }
     resourceStyles.card.shadow,
     resourceStyles.card.padding,
     resourceStyles.card.transition,
-    resourceStyles.card.hover
+    resourceStyles.card.hover,
   )
 
   const titleClasses = combineStyles(
     resourceStyles.title.size,
     resourceStyles.title.weight,
     resourceStyles.title.color,
-    resourceStyles.title.marginBottom
+    resourceStyles.title.marginBottom,
   )
 
   const descriptionClasses = combineStyles(
     resourceStyles.description.size,
     resourceStyles.description.color,
     resourceStyles.description.marginBottom,
-    resourceStyles.description.lineHeight
+    resourceStyles.description.lineHeight,
   )
 
   const metadataClasses = combineStyles(
     resourceStyles.metadata.size,
     resourceStyles.metadata.color,
-    resourceStyles.metadata.marginBottom
+    resourceStyles.metadata.marginBottom,
   )
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     })
   }
 
   const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     })
   }
 
@@ -64,16 +66,10 @@ export function ResourceCard({ resource, showActions = false, onEdit, onDelete }
         <h3 className={titleClasses}>{resource.title}</h3>
         {showActions && (
           <div className="flex gap-2">
-            <button
-              onClick={() => onEdit?.(resource)}
-              className="text-blue-600 hover:text-blue-800 text-sm"
-            >
+            <button onClick={() => onEdit?.(resource)} className="text-blue-600 hover:text-blue-800 text-sm">
               Edit
             </button>
-            <button
-              onClick={() => onDelete?.(resource.id)}
-              className="text-red-600 hover:text-red-800 text-sm"
-            >
+            <button onClick={() => onDelete?.(resource.id)} className="text-red-600 hover:text-red-800 text-sm">
               Delete
             </button>
           </div>
@@ -99,34 +95,26 @@ export function ResourceCard({ resource, showActions = false, onEdit, onDelete }
         )}
       </div>
 
-      {resource.description && (
-        <p className={descriptionClasses}>
-          {resource.description}
-        </p>
-      )}
+      {resource.description && <p className={descriptionClasses}>{resource.description}</p>}
 
       {resource.tags && resource.tags.length > 0 && (
         <div className="mb-4">
-          {resource.tags.map((tag) => (
-            <span
-              key={tag.tag_id}
-              className={combineStyles(
-                resourceStyles.tag.padding,
-                resourceStyles.tag.borderRadius,
-                resourceStyles.tag.size,
-                resourceStyles.tag.weight,
-                resourceStyles.tag.margin
-              )}
-              style={{ 
-                backgroundColor: `${tag.effective_color}20`, 
-                color: tag.effective_color,
-                border: `1px solid ${tag.effective_color}40`
-              }}
-              title={tag.full_path}
-            >
-              {tag.tag_name}
-            </span>
-          ))}
+          <div className="flex flex-wrap gap-2">
+            {resource.tags.map((tag) => (
+              <span
+                key={tag.tag_id}
+                className="inline-block px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
+                style={{
+                  backgroundColor: `${tag.effective_color}20`,
+                  color: tag.effective_color,
+                  border: `1px solid ${tag.effective_color}40`,
+                }}
+                title={tag.full_path}
+              >
+                {tag.tag_name}
+              </span>
+            ))}
+          </div>
         </div>
       )}
 
@@ -144,7 +132,7 @@ export function ResourceCard({ resource, showActions = false, onEdit, onDelete }
               resourceStyles.primaryButton.size,
               resourceStyles.primaryButton.weight,
               resourceStyles.primaryButton.transition,
-              'inline-flex items-center gap-2'
+              "inline-flex items-center gap-2",
             )}
           >
             <ExternalLink className="w-4 h-4" />
@@ -164,7 +152,7 @@ export function ResourceCard({ resource, showActions = false, onEdit, onDelete }
               resourceStyles.secondaryButton.size,
               resourceStyles.secondaryButton.weight,
               resourceStyles.secondaryButton.transition,
-              'inline-flex items-center gap-2'
+              "inline-flex items-center gap-2",
             )}
           >
             <Download className="w-4 h-4" />
@@ -177,14 +165,14 @@ export function ResourceCard({ resource, showActions = false, onEdit, onDelete }
             target="_blank"
             rel="noopener noreferrer"
             className={combineStyles(
-              'bg-blue-700 hover:bg-blue-800',
+              "bg-blue-700 hover:bg-blue-800",
               resourceStyles.primaryButton.text,
               resourceStyles.primaryButton.padding,
               resourceStyles.primaryButton.borderRadius,
               resourceStyles.primaryButton.size,
               resourceStyles.primaryButton.weight,
               resourceStyles.primaryButton.transition,
-              'inline-flex items-center gap-2'
+              "inline-flex items-center gap-2",
             )}
           >
             <Linkedin className="w-4 h-4" />
