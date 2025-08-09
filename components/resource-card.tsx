@@ -1,6 +1,6 @@
 import { ResourceWithTags } from '@/lib/db'
 import { resourceStyles, combineStyles } from '@/lib/styles'
-import { ExternalLink, Download, Calendar, User } from 'lucide-react'
+import { ExternalLink, Download, Calendar, User, Linkedin, Clock } from 'lucide-react'
 
 interface ResourceCardProps {
   resource: ResourceWithTags
@@ -40,6 +40,24 @@ export function ResourceCard({ resource, showActions = false, onEdit, onDelete }
     resourceStyles.metadata.marginBottom
   )
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
+  }
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
+  }
+
+  const wasUpdated = resource.updated_at && resource.updated_at !== resource.created_at
+
   return (
     <div className={cardClasses}>
       <div className="flex justify-between items-start mb-3">
@@ -70,9 +88,15 @@ export function ResourceCard({ resource, showActions = false, onEdit, onDelete }
           </span>
           <span className="flex items-center gap-1">
             <Calendar className="w-3 h-3" />
-            {new Date(resource.date).toLocaleDateString()}
+            {formatDate(resource.date)}
           </span>
         </div>
+        {wasUpdated && (
+          <div className="flex items-center gap-1 text-xs text-gray-400">
+            <Clock className="w-3 h-3" />
+            Updated {formatDateTime(resource.updated_at)}
+          </div>
+        )}
       </div>
 
       {resource.description && (
@@ -85,7 +109,7 @@ export function ResourceCard({ resource, showActions = false, onEdit, onDelete }
         <div className="mb-4">
           {resource.tags.map((tag) => (
             <span
-              key={tag.id}
+              key={tag.tag_id}
               className={combineStyles(
                 resourceStyles.tag.padding,
                 resourceStyles.tag.borderRadius,
@@ -94,18 +118,19 @@ export function ResourceCard({ resource, showActions = false, onEdit, onDelete }
                 resourceStyles.tag.margin
               )}
               style={{ 
-                backgroundColor: `${tag.color}20`, 
-                color: tag.color,
-                border: `1px solid ${tag.color}40`
+                backgroundColor: `${tag.effective_color}20`, 
+                color: tag.effective_color,
+                border: `1px solid ${tag.effective_color}40`
               }}
+              title={tag.full_path}
             >
-              {tag.name}
+              {tag.tag_name}
             </span>
           ))}
         </div>
       )}
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         {resource.url_link && (
           <a
             href={resource.url_link}
@@ -144,6 +169,26 @@ export function ResourceCard({ resource, showActions = false, onEdit, onDelete }
           >
             <Download className="w-4 h-4" />
             Download
+          </a>
+        )}
+        {resource.linkedin_profile && (
+          <a
+            href={resource.linkedin_profile}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={combineStyles(
+              'bg-blue-700 hover:bg-blue-800',
+              resourceStyles.primaryButton.text,
+              resourceStyles.primaryButton.padding,
+              resourceStyles.primaryButton.borderRadius,
+              resourceStyles.primaryButton.size,
+              resourceStyles.primaryButton.weight,
+              resourceStyles.primaryButton.transition,
+              'inline-flex items-center gap-2'
+            )}
+          >
+            <Linkedin className="w-4 h-4" />
+            LinkedIn
           </a>
         )}
       </div>
