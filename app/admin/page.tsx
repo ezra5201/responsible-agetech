@@ -362,164 +362,191 @@ export default function AdminPage() {
                   Add Resource
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>{editingResource ? "Edit Resource" : "Add New Resource"}</DialogTitle>
                   {editingResource && (
-                    <div className="text-sm text-gray-500 mt-2">
-                      <p>Originally submitted: {formatDate(editingResource.date)}</p>
+                    <div className="text-sm text-gray-500 mt-2 flex gap-4">
+                      <span>Originally submitted: {formatDate(editingResource.date)}</span>
                       {editingResource.updated_at && editingResource.updated_at !== editingResource.created_at && (
-                        <p>Last updated: {formatDateTime(editingResource.updated_at)}</p>
+                        <span>Last updated: {formatDateTime(editingResource.updated_at)}</span>
                       )}
                     </div>
                   )}
                 </DialogHeader>
-                <form action={handleResourceSubmit} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="submitted_by">Submitted By</Label>
-                      <Input
-                        id="submitted_by"
-                        name="submitted_by"
-                        defaultValue={editingResource?.submitted_by}
-                        required
-                      />
+
+                <form action={handleResourceSubmit} className="space-y-6">
+                  {/* Main Content Grid */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Left Column - Basic Info */}
+                    <div className="lg:col-span-2 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="submitted_by">Submitted By</Label>
+                          <Input
+                            id="submitted_by"
+                            name="submitted_by"
+                            defaultValue={editingResource?.submitted_by}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="date">
+                            {editingResource ? "Date Submitted (Original)" : "Date Submitted"}
+                          </Label>
+                          <Input id="date" name="date" type="date" defaultValue={editingResource?.date} required />
+                          {editingResource && (
+                            <p className="text-xs text-gray-500 mt-1">This preserves the original submission date</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="title">Title</Label>
+                        <Input id="title" name="title" defaultValue={editingResource?.title} required />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="description">Description</Label>
+                        <Textarea
+                          id="description"
+                          name="description"
+                          defaultValue={editingResource?.description || ""}
+                          rows={4}
+                          className="resize-none"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="url_link">URL Link</Label>
+                          <Input
+                            id="url_link"
+                            name="url_link"
+                            type="url"
+                            defaultValue={editingResource?.url_link || ""}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="download_link">Download Link</Label>
+                          <Input
+                            id="download_link"
+                            name="download_link"
+                            type="url"
+                            defaultValue={editingResource?.download_link || ""}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="linkedin_profile">LinkedIn Profile (Optional)</Label>
+                        <Input
+                          id="linkedin_profile"
+                          name="linkedin_profile"
+                          type="url"
+                          placeholder="https://linkedin.com/in/username (optional)"
+                          defaultValue={editingResource?.linkedin_profile || ""}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Leave blank if not applicable</p>
+                      </div>
                     </div>
-                    <div>
-                      <Label htmlFor="date">{editingResource ? "Date Submitted (Original)" : "Date Submitted"}</Label>
-                      <Input id="date" name="date" type="date" defaultValue={editingResource?.date} required />
-                      {editingResource && (
-                        <p className="text-xs text-gray-500 mt-1">This preserves the original submission date</p>
-                      )}
-                    </div>
-                  </div>
 
-                  <div>
-                    <Label htmlFor="title">Title</Label>
-                    <Input id="title" name="title" defaultValue={editingResource?.title} required />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      name="description"
-                      defaultValue={editingResource?.description || ""}
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="url_link">URL Link</Label>
-                      <Input id="url_link" name="url_link" type="url" defaultValue={editingResource?.url_link || ""} />
-                    </div>
-                    <div>
-                      <Label htmlFor="download_link">Download Link</Label>
-                      <Input
-                        id="download_link"
-                        name="download_link"
-                        type="url"
-                        defaultValue={editingResource?.download_link || ""}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="linkedin_profile">LinkedIn Profile (Optional)</Label>
-                    <Input
-                      id="linkedin_profile"
-                      name="linkedin_profile"
-                      type="url"
-                      placeholder="https://linkedin.com/in/username (optional)"
-                      defaultValue={editingResource?.linkedin_profile || ""}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Leave blank if not applicable</p>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <Label>Tags</Label>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIsAddingTag(!isAddingTag)}
-                        className="text-xs"
-                      >
-                        <Plus className="w-3 h-3 mr-1" />
-                        Add Tag
-                      </Button>
-                    </div>
-
-                    {isAddingTag && (
-                      <div className="mb-4 p-3 bg-gray-50 rounded-md border">
-                        <div className="flex gap-2 items-end">
-                          <div className="flex-1">
-                            <Label htmlFor="quick-tag-name" className="text-xs">
-                              Tag Name
-                            </Label>
-                            <Input
-                              id="quick-tag-name"
-                              value={newTagName}
-                              onChange={(e) => setNewTagName(e.target.value)}
-                              placeholder="Enter tag name"
-                              className="h-8 text-sm"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="quick-tag-color" className="text-xs">
-                              Color
-                            </Label>
-                            <Input
-                              id="quick-tag-color"
-                              type="color"
-                              value={newTagColor}
-                              onChange={(e) => setNewTagColor(e.target.value)}
-                              className="h-8 w-16"
-                            />
-                          </div>
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={handleQuickTagAdd}
-                            disabled={!newTagName.trim()}
-                            className="h-8"
-                          >
-                            Add
-                          </Button>
+                    {/* Right Column - Tags */}
+                    <div className="lg:col-span-1">
+                      <div className="sticky top-0">
+                        <div className="flex items-center justify-between mb-3">
+                          <Label className="text-base font-medium">Tags</Label>
                           <Button
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => {
-                              setIsAddingTag(false)
-                              setNewTagName("")
-                              setNewTagColor("#3B82F6")
-                            }}
-                            className="h-8"
+                            onClick={() => setIsAddingTag(!isAddingTag)}
+                            className="text-xs"
                           >
-                            Cancel
+                            <Plus className="w-3 h-3 mr-1" />
+                            Add Tag
                           </Button>
                         </div>
+
+                        {isAddingTag && (
+                          <div className="mb-4 p-3 bg-gray-50 rounded-md border">
+                            <div className="space-y-2">
+                              <div>
+                                <Label htmlFor="quick-tag-name" className="text-xs">
+                                  Tag Name
+                                </Label>
+                                <Input
+                                  id="quick-tag-name"
+                                  value={newTagName}
+                                  onChange={(e) => setNewTagName(e.target.value)}
+                                  placeholder="Enter tag name"
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                              <div className="flex gap-2">
+                                <div className="flex-1">
+                                  <Label htmlFor="quick-tag-color" className="text-xs">
+                                    Color
+                                  </Label>
+                                  <Input
+                                    id="quick-tag-color"
+                                    type="color"
+                                    value={newTagColor}
+                                    onChange={(e) => setNewTagColor(e.target.value)}
+                                    className="h-8"
+                                  />
+                                </div>
+                                <div className="flex gap-1 items-end">
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={handleQuickTagAdd}
+                                    disabled={!newTagName.trim()}
+                                    className="h-8 px-2"
+                                  >
+                                    Add
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      setIsAddingTag(false)
+                                      setNewTagName("")
+                                      setNewTagColor("#3B82F6")
+                                    }}
+                                    className="h-8 px-2"
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="max-h-[60vh] overflow-y-auto border rounded-md bg-gray-50 p-3">
+                          <ThreeLevelTagSelector
+                            hierarchy={tagHierarchy}
+                            defaultValues={editingResource?.tags?.map((t) => t.tag_id) || []}
+                          />
+
+                          {Object.keys(tagHierarchy).length === 0 && (
+                            <p className="text-sm text-gray-500 text-center py-4">
+                              No tags available. Create your first tag using the "Add Tag" button above.
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    )}
-
-                    <div className="max-h-96 overflow-y-auto">
-                      <ThreeLevelTagSelector
-                        hierarchy={tagHierarchy}
-                        defaultValues={editingResource?.tags?.map((t) => t.tag_id) || []}
-                      />
                     </div>
-
-                    {Object.keys(tagHierarchy).length === 0 && (
-                      <p className="text-sm text-gray-500 mt-2">
-                        No tags available. Create your first tag using the "Add Tag" button above.
-                      </p>
-                    )}
                   </div>
 
-                  <Button type="submit">{editingResource ? "Update Resource" : "Create Resource"}</Button>
+                  {/* Submit Button */}
+                  <div className="flex justify-end pt-4 border-t">
+                    <Button type="submit" size="lg">
+                      {editingResource ? "Update Resource" : "Create Resource"}
+                    </Button>
+                  </div>
                 </form>
               </DialogContent>
             </Dialog>
