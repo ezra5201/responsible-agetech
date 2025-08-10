@@ -4,10 +4,11 @@ import { useState, useEffect } from "react"
 import type { ResourceWithTags, Tag } from "@/lib/db"
 import { ResourceCard } from "@/components/resource-card"
 import { ResourceListItem } from "@/components/resource-list-item"
+import { ResourceCompactItem } from "@/components/resource-compact-item"
 import { SlidingFilterPanel } from "@/components/sliding-filter-panel"
 import { ActiveFiltersBar } from "@/components/active-filters-bar"
 import { resourceStyles } from "@/lib/styles"
-import { Search, SortAsc, SortDesc, Filter, Grid3X3, List } from "lucide-react"
+import { Search, SortAsc, SortDesc, Filter, Grid3X3, List, Smartphone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export default function ResourcesPage() {
@@ -21,7 +22,7 @@ export default function ResourcesPage() {
   const [error, setError] = useState<string | null>(null)
   const [tagHierarchy, setTagHierarchy] = useState<any>({})
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false)
-  const [viewMode, setViewMode] = useState<"cards" | "list">("list")
+  const [viewMode, setViewMode] = useState<"cards" | "list" | "compact">("list")
 
   useEffect(() => {
     fetchTags()
@@ -212,6 +213,15 @@ export default function ResourcesPage() {
                     <List className="w-4 h-4" />
                     List
                   </button>
+                  <button
+                    onClick={() => setViewMode("compact")}
+                    className={`px-3 py-2 flex items-center gap-1 text-sm font-medium transition-colors border-l border-gray-300 ${
+                      viewMode === "compact" ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <Smartphone className="w-4 h-4" />
+                    Compact
+                  </button>
                 </div>
 
                 {/* Mobile Filter Button */}
@@ -226,21 +236,30 @@ export default function ResourcesPage() {
               <div className="flex w-full border border-gray-300 rounded-md overflow-hidden">
                 <button
                   onClick={() => setViewMode("cards")}
-                  className={`flex-1 px-3 py-2 flex items-center justify-center gap-1 text-sm font-medium transition-colors ${
+                  className={`flex-1 px-2 py-2 flex items-center justify-center gap-1 text-xs font-medium transition-colors ${
                     viewMode === "cards" ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"
                   }`}
                 >
-                  <Grid3X3 className="w-4 h-4" />
+                  <Grid3X3 className="w-3 h-3" />
                   Cards
                 </button>
                 <button
                   onClick={() => setViewMode("list")}
-                  className={`flex-1 px-3 py-2 flex items-center justify-center gap-1 text-sm font-medium transition-colors border-l border-gray-300 ${
+                  className={`flex-1 px-2 py-2 flex items-center justify-center gap-1 text-xs font-medium transition-colors border-l border-gray-300 ${
                     viewMode === "list" ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"
                   }`}
                 >
-                  <List className="w-4 h-4" />
+                  <List className="w-3 h-3" />
                   List
+                </button>
+                <button
+                  onClick={() => setViewMode("compact")}
+                  className={`flex-1 px-2 py-2 flex items-center justify-center gap-1 text-xs font-medium transition-colors border-l border-gray-300 ${
+                    viewMode === "compact" ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  <Smartphone className="w-3 h-3" />
+                  Compact
                 </button>
               </div>
             </div>
@@ -286,10 +305,16 @@ export default function ResourcesPage() {
                 <ResourceCard key={resource.id} resource={resource} />
               ))}
             </div>
-          ) : (
+          ) : viewMode === "list" ? (
             <div className="space-y-4">
               {filteredResources.map((resource) => (
                 <ResourceListItem key={resource.id} resource={resource} />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredResources.map((resource) => (
+                <ResourceCompactItem key={resource.id} resource={resource} />
               ))}
             </div>
           )}
