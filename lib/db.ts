@@ -1,4 +1,4 @@
-import { neon } from '@neondatabase/serverless'
+import { neon } from "@neondatabase/serverless"
 
 const sql = neon(process.env.DATABASE_URL!)
 
@@ -67,6 +67,7 @@ export interface Resource {
   date: string
   title: string
   description: string | null
+  "author/s": string | null
   url_link: string | null
   download_link: string | null
   linkedin_profile: string | null
