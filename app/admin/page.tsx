@@ -50,6 +50,7 @@ export default function AdminPage() {
     fetchTags()
   }, [])
 
+  // Reset selected tags when dialog opens/closes or editing resource changes
   useEffect(() => {
     if (isResourceDialogOpen) {
       setSelectedTags(editingResource?.tags?.map((t) => t.tag_id) || [])
@@ -65,6 +66,7 @@ export default function AdminPage() {
       setError(null)
 
       const response = await fetch("/api/resources")
+
       if (!response.ok) {
         const errorText = await response.text()
         throw new Error(`HTTP ${response.status}: ${errorText}`)
@@ -78,8 +80,12 @@ export default function AdminPage() {
       }
 
       const data = await response.json()
-      if (data.error) throw new Error(data.error)
 
+      if (data.error) {
+        throw new Error(data.error)
+      }
+
+      // Ensure data is an array
       if (Array.isArray(data)) {
         setResources(data)
       } else {
@@ -90,7 +96,7 @@ export default function AdminPage() {
     } catch (error) {
       console.error("Error fetching resources:", error)
       setError(error instanceof Error ? error.message : "Failed to fetch resources")
-      setResources([])
+      setResources([]) // Ensure resources is always an array
     } finally {
       setLoading(false)
     }
@@ -98,10 +104,15 @@ export default function AdminPage() {
 
   const fetchTags = async () => {
     try {
+      // Admin interface gets ALL tags (don't use public=true parameter)
       const response = await fetch("/api/tags")
-      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
 
       const data = await response.json()
+
       if (data.flat && Array.isArray(data.flat)) {
         setTags(data.flat)
         setTagHierarchy(data.hierarchy || {})
@@ -122,6 +133,7 @@ export default function AdminPage() {
     setSuggestionError(null)
 
     try {
+      // Get current form values
       const form = document.querySelector("form") as HTMLFormElement
       if (!form) {
         setSuggestionError("Could not access form data")
@@ -136,6 +148,7 @@ export default function AdminPage() {
         url_link: formData.get("url_link") as string,
       }
 
+      // Check if we have enough content to analyze
       const hasContent = resourceData.title?.trim() || resourceData.description?.trim()
       if (!hasContent) {
         setSuggestionError("Please add a title or description before requesting tag suggestions.")
@@ -149,8 +162,9 @@ export default function AdminPage() {
       })
 
       const data: SuggestionResponse = await response.json()
-      if ((data as any).error) {
-        setSuggestionError((data as any).error)
+
+      if (data.error) {
+        setSuggestionError(data.error)
         return
       }
 
@@ -158,6 +172,7 @@ export default function AdminPage() {
         setTagSuggestions(data.suggestions)
         setShowSuggestions(true)
 
+        // Auto-select high-confidence suggestions
         const highConfidenceTags = data.suggestions
           .filter((s: TagSuggestion) => s.confidence >= 0.8)
           .map((s: TagSuggestion) => s.tagId)
@@ -231,7 +246,11 @@ export default function AdminPage() {
 
     try {
       const response = await fetch(`/api/resources/${id}`, { method: "DELETE" })
-      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+
       fetchResources()
     } catch (error) {
       console.error("Error deleting resource:", error)
@@ -252,11 +271,41 @@ export default function AdminPage() {
         body: JSON.stringify(data),
       })
 
-      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
 
+      // Clear the form after successful submission
       const form = document.querySelector('form[action="handleTagSubmit"]') as HTMLFormElement
-      if (form) form.reset()
+      if (form) {
+        form.reset()
+      }
+
       fetchTags()
+    } catch (error) {
+      console.error("Error creating tag:", error)
+      alert("Failed to create tag. Please try again.")
+    }
+  }
+
+  const handleQuickTagAdd = async () => {
+    if (!newTagName.trim()) return
+
+    try {
+      const response = await fetch("/api/tags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newTagName.trim(), color: newTagColor }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+
+      setNewTagName("")
+      setNewTagColor("#3B82F6")
+      setIsAddingTag(false)
+      fetchTags() // Refresh the tags list
     } catch (error) {
       console.error("Error creating tag:", error)
       alert("Failed to create tag. Please try again.")
@@ -281,6 +330,7 @@ export default function AdminPage() {
     })
   }
 
+  // Count total tags available in admin
   const totalTagsCount = Object.values(tagHierarchy).reduce((total, category: any) => {
     return (
       total +
@@ -343,6 +393,7 @@ export default function AdminPage() {
             <p className="text-sm text-gray-600 mt-1">Full taxonomy available ({totalTagsCount} total tags)</p>
           </div>
           <div className="flex gap-3">
+            {/* View Public Button */}
             <Link href="/resources">
               <Button variant="outline" className="flex items-center gap-2 bg-transparent">
                 <Eye className="w-4 h-4" />
@@ -350,6 +401,7 @@ export default function AdminPage() {
               </Button>
             </Link>
 
+            {/* View Live Button */}
             <Button
               variant="outline"
               className="flex items-center gap-2 bg-transparent"
@@ -359,6 +411,7 @@ export default function AdminPage() {
               View Live
             </Button>
 
+            {/* Manage Tags Button */}
             <Dialog open={isTagDialogOpen} onOpenChange={setIsTagDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline">
@@ -372,6 +425,7 @@ export default function AdminPage() {
                 </DialogHeader>
 
                 <div className="space-y-6">
+                  {/* Add New Tag Form */}
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <h3 className="font-medium mb-3">Add New Tag</h3>
                     <form action={handleTagSubmit} className="space-y-4" key={tags.length}>
@@ -389,10 +443,15 @@ export default function AdminPage() {
                     </form>
                   </div>
 
+                  {/* Hierarchical Tag Display */}
                   <div>
                     <h3 className="font-medium mb-3">All Tags ({totalTagsCount} total)</h3>
                     <div className="max-h-[50vh] overflow-y-auto">
-                      <ThreeLevelTagSelector hierarchy={tagHierarchy} selectedTags={[]} onTagChange={() => {}} />
+                      <ThreeLevelTagSelector
+                        hierarchy={tagHierarchy}
+                        selectedTags={[]}
+                        onTagChange={() => {}} // Read-only display
+                      />
                     </div>
 
                     {Object.keys(tagHierarchy).length === 0 && (
@@ -403,6 +462,7 @@ export default function AdminPage() {
               </DialogContent>
             </Dialog>
 
+            {/* Add Resource Button */}
             <Dialog open={isResourceDialogOpen} onOpenChange={setIsResourceDialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={() => setEditingResource(null)}>
@@ -424,7 +484,9 @@ export default function AdminPage() {
                 </DialogHeader>
 
                 <form action={handleResourceSubmit} className="space-y-6">
+                  {/* Main Content Grid - Responsive Layout */}
                   <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+                    {/* Left Column - Basic Info */}
                     <div className="xl:col-span-3 space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -452,7 +514,7 @@ export default function AdminPage() {
                         <Input
                           id="author"
                           name="author"
-                          defaultValue={(editingResource as any)?.author || ""}
+                          defaultValue={editingResource?.author || ""}
                           placeholder="Enter author name(s)"
                         />
                       </div>
@@ -507,6 +569,7 @@ export default function AdminPage() {
                       </div>
                     </div>
 
+                    {/* Right Column - Tags (stacks below on mobile) */}
                     <div className="xl:col-span-2 order-last xl:order-none">
                       <div className="flex items-center justify-between mb-3">
                         <Label className="text-base font-medium">Tags</Label>
@@ -539,6 +602,7 @@ export default function AdminPage() {
                         </div>
                       </div>
 
+                      {/* Error Display */}
                       {suggestionError && (
                         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
                           <div className="flex items-center gap-2 text-red-800">
@@ -566,6 +630,54 @@ export default function AdminPage() {
                               </ol>
                             </div>
                           )}
+                        </div>
+                      )}
+
+                      {/* AI Suggestions Panel */}
+                      {showSuggestions && tagSuggestions.length > 0 && (
+                        <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-md">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Sparkles className="w-4 h-4 text-purple-600" />
+                            <h4 className="font-medium text-purple-900">Claude AI Suggestions</h4>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setShowSuggestions(false)}
+                              className="ml-auto h-6 w-6 p-0 text-purple-600 hover:text-purple-800"
+                            >
+                              ×
+                            </Button>
+                          </div>
+                          <div className="space-y-2 max-h-32 overflow-y-auto">
+                            {tagSuggestions.map((suggestion, index) => {
+                              const isSelected = selectedTags.includes(suggestion.tagId)
+                              return (
+                                <div key={index} className="flex items-center justify-between text-xs">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-medium text-purple-800">{suggestion.tagName}</span>
+                                      <span className="text-purple-600">
+                                        ({Math.round(suggestion.confidence * 100)}%)
+                                      </span>
+                                    </div>
+                                    <div className="text-purple-600 text-xs truncate">{suggestion.reasoning}</div>
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant={isSelected ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() =>
+                                      isSelected ? removeSuggestion(suggestion) : applySuggestion(suggestion)
+                                    }
+                                    className="ml-2 h-6 px-2 text-xs"
+                                  >
+                                    {isSelected ? "✓" : "+"}
+                                  </Button>
+                                </div>
+                              )
+                            })}
+                          </div>
                         </div>
                       )}
 
@@ -601,7 +713,7 @@ export default function AdminPage() {
                                 <Button
                                   type="button"
                                   size="sm"
-                                  onClick={() => {}}
+                                  onClick={handleQuickTagAdd}
                                   disabled={!newTagName.trim()}
                                   className="h-8 px-2"
                                 >
@@ -633,6 +745,7 @@ export default function AdminPage() {
                           onTagChange={handleTagChange}
                           defaultValues={[]}
                         />
+
                         {Object.keys(tagHierarchy).length === 0 && (
                           <p className="text-sm text-gray-500 text-center py-4">
                             No tags available. Create your first tag using the "Add Tag" button above.
@@ -642,6 +755,7 @@ export default function AdminPage() {
                     </div>
                   </div>
 
+                  {/* Submit Button */}
                   <div className="flex justify-end pt-4 border-t">
                     <Button type="submit" size="lg">
                       {editingResource ? "Update Resource" : "Create Resource"}
@@ -653,6 +767,7 @@ export default function AdminPage() {
           </div>
         </div>
 
+        {/* Resources Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {resources.map((resource) => (
             <ResourceCard

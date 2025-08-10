@@ -1,70 +1,78 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getResourceById, updateResource, deleteResource, addTagsToResource } from "@/lib/db"
-
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
-  try {
-    const id = Number.parseInt(params.id)
-    if (isNaN(id)) {
-      return NextResponse.json({ error: "Invalid resource ID" }, { status: 400 })
-    }
-
-    const resource = await getResourceById(id)
-    if (!resource) {
-      return NextResponse.json({ error: "Resource not found" }, { status: 404 })
-    }
-
-    return NextResponse.json(resource)
-  } catch (error) {
-    console.error("Error in GET /api/resources/[id]:", error)
-    return NextResponse.json({ error: "Failed to fetch resource" }, { status: 500 })
-  }
-}
+import { sql } from "@/lib/db"
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const id = Number.parseInt(params.id)
-    if (isNaN(id)) {
-      return NextResponse.json({ error: "Invalid resource ID" }, { status: 400 })
+    const body = await request.json()
+    const { submitted_by, date, title, description, author, url_link, download_link, linkedin_profile, tagIds } = body
+    const resourceId = Number.parseInt(params.id)
+
+    // Check if linkedin_profile column exists
+    const columnExists = await sql`
+      SELECT EXISTS(
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'resources' 
+        AND column_name = 'linkedin_profile'
+      ) as exists
+    `
+
+    let resource
+
+    if (columnExists[0].exists) {
+      // Update with linkedin_profile column
+      ;[resource] = await sql`
+        UPDATE resources 
+        SET submitted_by = ${submitted_by}, date = ${date}, title = ${title}, 
+            description = ${description}, author = ${author}, url_link = ${url_link}, 
+            download_link = ${download_link}, linkedin_profile = ${linkedin_profile},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ${resourceId}
+        RETURNING *
+      `
+    } else {
+      // Update without linkedin_profile column
+      ;[resource] = await sql`
+        UPDATE resources 
+        SET submitted_by = ${submitted_by}, date = ${date}, title = ${title}, 
+            description = ${description}, author = ${author}, url_link = ${url_link}, 
+            download_link = ${download_link},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ${resourceId}
+        RETURNING *
+      `
+      // Add linkedin_profile as null for consistency
+      resource.linkedin_profile = null
     }
 
-    const body = await request.json()
-    const { submitted_by, date, title, description, url_link, download_link, linkedin_profile, author, tagIds } = body
+    // Delete existing tags
+    await sql`DELETE FROM resource_tags WHERE resource_id = ${resourceId}`
 
-    // Update the resource
-    const resource = await updateResource(id, {
-      submitted_by: submitted_by,
-      date: date,
-      author: author,
-      title: title,
-      description: description,
-      url_link: url_link,
-      download_link: download_link,
-      linkedin_profile: linkedin_profile,
-    })
-
-    // Update tags if provided
-    if (tagIds && Array.isArray(tagIds)) {
-      await addTagsToResource(id, tagIds)
+    // Insert new tags
+    if (tagIds && tagIds.length > 0) {
+      for (const tagId of tagIds) {
+        await sql`
+          INSERT INTO resource_tags (resource_id, tag_id)
+          VALUES (${resourceId}, ${tagId})
+        `
+      }
     }
 
     return NextResponse.json(resource)
   } catch (error) {
-    console.error("Error in PUT /api/resources/[id]:", error)
+    console.error("Error updating resource:", error)
     return NextResponse.json({ error: "Failed to update resource" }, { status: 500 })
   }
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const id = Number.parseInt(params.id)
-    if (isNaN(id)) {
-      return NextResponse.json({ error: "Invalid resource ID" }, { status: 400 })
-    }
+    const resourceId = Number.parseInt(params.id)
 
-    await deleteResource(id)
+    await sql`DELETE FROM resources WHERE id = ${resourceId}`
+
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error in DELETE /api/resources/[id]:", error)
+    console.error("Error deleting resource:", error)
     return NextResponse.json({ error: "Failed to delete resource" }, { status: 500 })
   }
 }
