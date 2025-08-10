@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { sql } from "@/lib/db"
+import { sql, createResource, addTagsToResource } from "@/lib/db"
 
 export async function GET(request: NextRequest) {
   try {
@@ -7,19 +7,6 @@ export async function GET(request: NextRequest) {
     const tags = searchParams.get("tags")?.split(",").filter(Boolean) || []
     const sortBy = searchParams.get("sortBy") || "date"
     const sortOrder = searchParams.get("sortOrder") || "desc"
-
-    // Validate sortBy parameter and create ORDER BY clause
-    let orderByClause = "ORDER BY r.date DESC" // Default
-    if (sortBy === "title") {
-      orderByClause = sortOrder.toLowerCase() === "asc" ? "ORDER BY r.title ASC" : "ORDER BY r.title DESC"
-    } else if (sortBy === "submitted_by") {
-      orderByClause = sortOrder.toLowerCase() === "asc" ? "ORDER BY r.submitted_by ASC" : "ORDER BY r.submitted_by DESC"
-    } else if (sortBy === "created_at") {
-      orderByClause = sortOrder.toLowerCase() === "asc" ? "ORDER BY r.created_at ASC" : "ORDER BY r.created_at DESC"
-    } else {
-      // Default to date
-      orderByClause = sortOrder.toLowerCase() === "asc" ? "ORDER BY r.date ASC" : "ORDER BY r.date DESC"
-    }
 
     let resources
 
@@ -175,23 +162,28 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { submitted_by, date, title, description, author, url_link, download_link, linkedin_profile, tagIds } = body
+    const { tagIds, ...resourceData } = body
 
-    // Insert resource
-    const [resource] = await sql`
-      INSERT INTO resources (submitted_by, date, title, description, author, url_link, download_link, linkedin_profile)
-      VALUES (${submitted_by}, ${date}, ${title}, ${description}, ${author}, ${url_link}, ${download_link}, ${linkedin_profile})
-      RETURNING *
-    `
+    // Validate required fields
+    if (!resourceData.submitted_by || !resourceData.date || !resourceData.title) {
+      return NextResponse.json({ error: "Missing required fields: submitted_by, date, title" }, { status: 400 })
+    }
 
-    // Insert resource tags
-    if (tagIds && tagIds.length > 0) {
-      for (const tagId of tagIds) {
-        await sql`
-          INSERT INTO resource_tags (resource_id, tag_id)
-          VALUES (${resource.id}, ${tagId})
-        `
-      }
+    // Create the resource
+    const resource = await createResource({
+      submitted_by: resourceData.submitted_by,
+      date: resourceData.date,
+      author: resourceData.author || null,
+      title: resourceData.title,
+      description: resourceData.description || null,
+      url_link: resourceData.url_link || null,
+      download_link: resourceData.download_link || null,
+      linkedin_profile: resourceData.linkedin_profile || null,
+    })
+
+    // Add tags if provided
+    if (tagIds && Array.isArray(tagIds) && tagIds.length > 0) {
+      await addTagsToResource(resource.id, tagIds)
     }
 
     return NextResponse.json(resource, { status: 201 })
