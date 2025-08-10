@@ -202,7 +202,7 @@ export default function ResourcesPage() {
                     }`}
                   >
                     <Grid3X3 className="w-4 h-4" />
-                    Cards
+                    Full
                   </button>
                   <button
                     onClick={() => setViewMode("list")}
@@ -211,7 +211,7 @@ export default function ResourcesPage() {
                     }`}
                   >
                     <List className="w-4 h-4" />
-                    List
+                    Brief
                   </button>
                   <button
                     onClick={() => setViewMode("compact")}
@@ -220,7 +220,7 @@ export default function ResourcesPage() {
                     }`}
                   >
                     <Smartphone className="w-4 h-4" />
-                    Compact
+                    Minimal
                   </button>
                 </div>
 
@@ -241,7 +241,7 @@ export default function ResourcesPage() {
                   }`}
                 >
                   <Grid3X3 className="w-3 h-3" />
-                  Cards
+                  Full
                 </button>
                 <button
                   onClick={() => setViewMode("list")}
@@ -250,7 +250,7 @@ export default function ResourcesPage() {
                   }`}
                 >
                   <List className="w-3 h-3" />
-                  List
+                  Brief
                 </button>
                 <button
                   onClick={() => setViewMode("compact")}
@@ -259,7 +259,7 @@ export default function ResourcesPage() {
                   }`}
                 >
                   <Smartphone className="w-3 h-3" />
-                  Compact
+                  Minimal
                 </button>
               </div>
             </div>
