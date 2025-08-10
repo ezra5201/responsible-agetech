@@ -7,17 +7,18 @@ export async function GET(request: NextRequest) {
     const publicOnly = searchParams.get("public") === "true"
 
     if (publicOnly) {
-      // For public interface: only return tags that have associated resources
+      // For public interface: only return tags that have associated resources AND exclude Content Type and Media Type
       const hierarchyData = await sql`
         SELECT DISTINCT cth.* 
         FROM complete_tag_hierarchy cth
         INNER JOIN resource_tags rt ON cth.tag_id = rt.tag_id
         INNER JOIN resources r ON rt.resource_id = r.id
         WHERE cth.tag_id IS NOT NULL
+          AND cth.category_name NOT IN ('Content Type', 'Media Type')
         ORDER BY cth.category_name, cth.sub_category_name, cth.tag_name
       `
 
-      // Build the hierarchy structure with only tags that have resources
+      // Build the hierarchy structure with only tags that have resources (excluding Content Type and Media Type)
       const hierarchy: any = {}
 
       hierarchyData.forEach((row) => {
@@ -61,14 +62,17 @@ export async function GET(request: NextRequest) {
         }
       })
 
-      // Get flat list of tags with resources for backward compatibility
+      // Get flat list of tags with resources for backward compatibility (excluding Content Type and Media Type)
       const flatTags = await sql`
         SELECT DISTINCT tt.id, tt.name, tt.slug, tt.color, tt.category_id, tt.sub_category_id,
                tt.sort_order, tt.is_active, tt.created_at, tt.updated_at
         FROM tag_tags tt
         INNER JOIN resource_tags rt ON tt.id = rt.tag_id
         INNER JOIN resources r ON rt.resource_id = r.id
+        INNER JOIN tag_sub_categories tsc ON tt.sub_category_id = tsc.id
+        INNER JOIN tag_categories tc ON tsc.category_id = tc.id
         WHERE tt.is_active = true
+          AND tc.name NOT IN ('Content Type', 'Media Type')
         ORDER BY tt.name
       `
 

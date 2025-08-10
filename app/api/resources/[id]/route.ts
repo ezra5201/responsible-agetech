@@ -64,6 +64,39 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const body = await request.json()
+    const { status, reviewed_by, review_notes } = body
+    const resourceId = Number.parseInt(params.id)
+
+    // Validate status
+    const validStatuses = ["draft", "pending_review", "published", "rejected"]
+    if (!validStatuses.includes(status)) {
+      return NextResponse.json({ error: "Invalid status" }, { status: 400 })
+    }
+
+    const [resource] = await sql`
+      UPDATE resources 
+      SET status = ${status}, 
+          reviewed_by = ${reviewed_by || null}, 
+          review_notes = ${review_notes || null},
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${resourceId}
+      RETURNING *
+    `
+
+    if (!resource) {
+      return NextResponse.json({ error: "Resource not found" }, { status: 404 })
+    }
+
+    return NextResponse.json(resource)
+  } catch (error) {
+    console.error("Error updating resource status:", error)
+    return NextResponse.json({ error: "Failed to update resource status" }, { status: 500 })
+  }
+}
+
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const resourceId = Number.parseInt(params.id)

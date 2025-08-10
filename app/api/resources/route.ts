@@ -7,6 +7,8 @@ export async function GET(request: NextRequest) {
     const tags = searchParams.get("tags")?.split(",").filter(Boolean) || []
     const sortBy = searchParams.get("sortBy") || "date"
     const sortOrder = searchParams.get("sortOrder") || "desc"
+    const admin = searchParams.get("admin") === "true"
+    const status = searchParams.get("status") || (admin ? "all" : "published")
 
     // Validate sortBy parameter and create ORDER BY clause
     let orderByClause = "ORDER BY r.date DESC" // Default
@@ -27,11 +29,13 @@ export async function GET(request: NextRequest) {
       // Query with tag filtering - simplified approach
       const resourcesWithTags = await sql`
         SELECT DISTINCT r.id, r.submitted_by, r.date, r.title, r.description, r."author/s",
-               r.url_link, r.download_link, r.linkedin_profile, r.created_at, r.updated_at
+               r.url_link, r.download_link, r.linkedin_profile, r.created_at, r.updated_at,
+               r.status, r.submitted_at, r.reviewed_by, r.review_notes
         FROM resources r
         INNER JOIN resource_tags rt ON r.id = rt.resource_id
         INNER JOIN complete_tag_hierarchy cth ON rt.tag_id = cth.tag_id
         WHERE cth.tag_name = ANY(${tags})
+        ${status === "all" ? sql`` : sql`AND r.status = ${status}`}
       `
 
       // Get tags for each resource separately
@@ -96,8 +100,10 @@ export async function GET(request: NextRequest) {
       // Query without tag filtering - simplified approach
       const allResources = await sql`
         SELECT r.id, r.submitted_by, r.date, r.title, r.description, r."author/s",
-               r.url_link, r.download_link, r.linkedin_profile, r.created_at, r.updated_at
+               r.url_link, r.download_link, r.linkedin_profile, r.created_at, r.updated_at,
+               r.status, r.submitted_at, r.reviewed_by, r.review_notes
         FROM resources r
+        ${status === "all" ? sql`` : sql`WHERE r.status = ${status}`}
       `
 
       // Get all tags for all resources
@@ -179,8 +185,8 @@ export async function POST(request: NextRequest) {
 
     // Insert resource
     const [resource] = await sql`
-      INSERT INTO resources (submitted_by, date, title, description, "author/s", url_link, download_link, linkedin_profile)
-      VALUES (${submitted_by}, ${date}, ${title}, ${description}, ${author}, ${url_link}, ${download_link}, ${linkedin_profile})
+      INSERT INTO resources (submitted_by, date, title, description, "author/s", url_link, download_link, linkedin_profile, status)
+      VALUES (${submitted_by}, ${date}, ${title}, ${description}, ${author}, ${url_link}, ${download_link}, ${linkedin_profile}, 'pending_review')
       RETURNING *
     `
 
