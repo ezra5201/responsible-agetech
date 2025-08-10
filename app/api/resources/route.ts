@@ -181,12 +181,23 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { submitted_by, date, title, description, author, url_link, download_link, linkedin_profile, tagIds } = body
+    const {
+      submitted_by,
+      date,
+      title,
+      description,
+      author,
+      url_link,
+      download_link,
+      linkedin_profile,
+      submitter_email,
+      tagIds,
+    } = body
 
     // Insert resource
     const [resource] = await sql`
-      INSERT INTO resources (submitted_by, date, title, description, "author/s", url_link, download_link, linkedin_profile, status)
-      VALUES (${submitted_by}, ${date}, ${title}, ${description}, ${author}, ${url_link}, ${download_link}, ${linkedin_profile}, 'pending_review')
+      INSERT INTO resources (submitted_by, date, title, description, "author/s", url_link, download_link, linkedin_profile, submitter_email, status)
+      VALUES (${submitted_by}, ${date}, ${title}, ${description}, ${author}, ${url_link}, ${download_link}, ${linkedin_profile}, ${submitter_email}, 'pending_review')
       RETURNING *
     `
 

@@ -20,6 +20,7 @@ export default function SubmitResourcePage() {
     url_link: "",
     download_link: "",
     linkedin_profile: "",
+    submitter_email: "",
   })
   const [selectedTags, setSelectedTags] = useState<number[]>([])
   const [tagHierarchy, setTagHierarchy] = useState<TagHierarchy>({})
@@ -172,15 +173,30 @@ export default function SubmitResourcePage() {
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="linkedin_profile">LinkedIn Profile</Label>
-              <Input
-                id="linkedin_profile"
-                name="linkedin_profile"
-                type="url"
-                value={formData.linkedin_profile}
-                onChange={handleInputChange}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label htmlFor="submitter_email">Submitter E-Mail *</Label>
+                <Input
+                  id="submitter_email"
+                  name="submitter_email"
+                  type="email"
+                  value={formData.submitter_email}
+                  onChange={handleInputChange}
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">Your email will not be publicly visible</p>
+              </div>
+
+              <div>
+                <Label htmlFor="linkedin_profile">LinkedIn Profile</Label>
+                <Input
+                  id="linkedin_profile"
+                  name="linkedin_profile"
+                  type="url"
+                  value={formData.linkedin_profile}
+                  onChange={handleInputChange}
+                />
+              </div>
             </div>
 
             <div>

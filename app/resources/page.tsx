@@ -43,6 +43,7 @@ export default function ResourcesPage() {
     url_link: "",
     download_link: "",
     linkedin_profile: "",
+    submitter_email: "",
   })
   const [submitSelectedTags, setSubmitSelectedTags] = useState<number[]>([])
   const [submitTagHierarchy, setSubmitTagHierarchy] = useState<TagHierarchy>({})
@@ -267,6 +268,7 @@ export default function ResourcesPage() {
           url_link: "",
           download_link: "",
           linkedin_profile: "",
+          submitter_email: "",
         })
         setSubmitSelectedTags([])
         setLinkedinError("")
@@ -497,19 +499,35 @@ export default function ResourcesPage() {
                         </div>
                       </div>
 
-                      <div>
-                        <Label htmlFor="linkedin_profile">LinkedIn Profile *</Label>
-                        <Input
-                          id="linkedin_profile"
-                          name="linkedin_profile"
-                          type="url"
-                          value={submitFormData.linkedin_profile}
-                          onChange={handleSubmitInputChange}
-                          placeholder="https://www.linkedin.com/in/yourname"
-                          required
-                          className={linkedinError ? "border-red-500" : ""}
-                        />
-                        {linkedinError && <p className="text-red-500 text-sm mt-1">{linkedinError}</p>}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <Label htmlFor="submitter_email">Submitter E-Mail *</Label>
+                          <Input
+                            id="submitter_email"
+                            name="submitter_email"
+                            type="email"
+                            value={submitFormData.submitter_email}
+                            onChange={handleSubmitInputChange}
+                            placeholder="your.email@example.com"
+                            required
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Your email will not be publicly visible</p>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="linkedin_profile">LinkedIn Profile *</Label>
+                          <Input
+                            id="linkedin_profile"
+                            name="linkedin_profile"
+                            type="url"
+                            value={submitFormData.linkedin_profile}
+                            onChange={handleSubmitInputChange}
+                            placeholder="https://www.linkedin.com/in/yourname"
+                            required
+                            className={linkedinError ? "border-red-500" : ""}
+                          />
+                          {linkedinError && <p className="text-red-500 text-sm mt-1">{linkedinError}</p>}
+                        </div>
                       </div>
 
                       <div>

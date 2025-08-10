@@ -4,7 +4,18 @@ import { sql } from "@/lib/db"
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const body = await request.json()
-    const { submitted_by, date, title, description, author, url_link, download_link, linkedin_profile, tagIds } = body
+    const {
+      submitted_by,
+      date,
+      title,
+      description,
+      author,
+      url_link,
+      download_link,
+      linkedin_profile,
+      submitter_email,
+      tagIds,
+    } = body
     const resourceId = Number.parseInt(params.id)
 
     // Check if linkedin_profile column exists
@@ -16,10 +27,30 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       ) as exists
     `
 
+    // Check if submitter_email column exists
+    const emailColumnExists = await sql`
+      SELECT EXISTS(
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'resources' 
+        AND column_name = 'submitter_email'
+      ) as exists
+    `
+
     let resource
 
-    if (columnExists[0].exists) {
-      // Update with linkedin_profile column
+    if (columnExists[0].exists && emailColumnExists[0].exists) {
+      // Update with both linkedin_profile and submitter_email columns
+      ;[resource] = await sql`
+        UPDATE resources 
+        SET submitted_by = ${submitted_by}, date = ${date}, title = ${title}, 
+            description = ${description}, "author/s" = ${author}, url_link = ${url_link}, 
+            download_link = ${download_link}, linkedin_profile = ${linkedin_profile},
+            submitter_email = ${submitter_email}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ${resourceId}
+        RETURNING *
+      `
+    } else if (columnExists[0].exists) {
+      // Update with linkedin_profile column only
       ;[resource] = await sql`
         UPDATE resources 
         SET submitted_by = ${submitted_by}, date = ${date}, title = ${title}, 
@@ -29,19 +60,19 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         WHERE id = ${resourceId}
         RETURNING *
       `
+      resource.submitter_email = null
     } else {
-      // Update without linkedin_profile column
+      // Update without linkedin_profile or submitter_email columns
       ;[resource] = await sql`
         UPDATE resources 
         SET submitted_by = ${submitted_by}, date = ${date}, title = ${title}, 
             description = ${description}, "author/s" = ${author}, url_link = ${url_link}, 
-            download_link = ${download_link},
-            updated_at = CURRENT_TIMESTAMP
+            download_link = ${download_link}, updated_at = CURRENT_TIMESTAMP
         WHERE id = ${resourceId}
         RETURNING *
       `
-      // Add linkedin_profile as null for consistency
       resource.linkedin_profile = null
+      resource.submitter_email = null
     }
 
     // Delete existing tags

@@ -213,6 +213,7 @@ export default function AdminPage() {
         url_link: formData.get("url_link"),
         download_link: formData.get("download_link"),
         linkedin_profile: formData.get("linkedin_profile"),
+        submitter_email: formData.get("submitter_email"),
         review_notes: formData.get("review_notes"),
         tagIds: selectedTags,
       }
@@ -623,16 +624,30 @@ export default function AdminPage() {
                         </div>
                       </div>
 
-                      <div>
-                        <Label htmlFor="linkedin_profile">LinkedIn Profile (Optional)</Label>
-                        <Input
-                          id="linkedin_profile"
-                          name="linkedin_profile"
-                          type="url"
-                          placeholder="https://linkedin.com/in/username (optional)"
-                          defaultValue={editingResource?.linkedin_profile || ""}
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Leave blank if not applicable</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="submitter_email">Submitter E-Mail</Label>
+                          <Input
+                            id="submitter_email"
+                            name="submitter_email"
+                            type="email"
+                            defaultValue={editingResource?.submitter_email || ""}
+                            placeholder="submitter@example.com"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Not publicly visible</p>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="linkedin_profile">LinkedIn Profile (Optional)</Label>
+                          <Input
+                            id="linkedin_profile"
+                            name="linkedin_profile"
+                            type="url"
+                            placeholder="https://linkedin.com/in/username (optional)"
+                            defaultValue={editingResource?.linkedin_profile || ""}
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Leave blank if not applicable</p>
+                        </div>
                       </div>
                       <div>
                         <Label htmlFor="review_notes">Review Notes (Admin Only)</Label>
