@@ -1,8 +1,6 @@
--- Add author column to resources table
-ALTER TABLE resources ADD COLUMN author TEXT;
+-- Add "author" column for resources
+ALTER TABLE resources
+  ADD COLUMN IF NOT EXISTS author TEXT;
 
--- Add index for author searches (optional but recommended for performance)
-CREATE INDEX idx_resources_author ON resources(author);
-
--- Update any existing resources to have NULL author (they can be updated later)
--- No action needed as ALTER TABLE ADD COLUMN sets NULL by default
+-- Optional index to speed up lookups by author
+CREATE INDEX IF NOT EXISTS idx_resources_author ON resources(author);

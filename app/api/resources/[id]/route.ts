@@ -28,18 +28,18 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     const body = await request.json()
-    const { tagIds, ...resourceData } = body
+    const { submitted_by, date, title, description, url_link, download_link, linkedin_profile, author, tagIds } = body
 
     // Update the resource
     const resource = await updateResource(id, {
-      submitted_by: resourceData.submitted_by,
-      date: resourceData.date,
-      author: resourceData.author,
-      title: resourceData.title,
-      description: resourceData.description,
-      url_link: resourceData.url_link,
-      download_link: resourceData.download_link,
-      linkedin_profile: resourceData.linkedin_profile,
+      submitted_by: submitted_by,
+      date: date,
+      author: author,
+      title: title,
+      description: description,
+      url_link: url_link,
+      download_link: download_link,
+      linkedin_profile: linkedin_profile,
     })
 
     // Update tags if provided

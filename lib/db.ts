@@ -10,7 +10,7 @@ export interface Resource {
   id: number
   submitted_by: string
   date: string
-  author?: string | null
+  author: string | null
   title: string
   description?: string | null
   url_link?: string | null
@@ -300,3 +300,5 @@ export async function addTagsToResource(resourceId: number, tagIds: number[]): P
     throw error
   }
 }
+
+export type TagTag = Tag

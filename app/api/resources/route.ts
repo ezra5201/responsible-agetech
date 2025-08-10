@@ -162,23 +162,23 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { tagIds, ...resourceData } = body
+    const { submitted_by, date, title, description, author, url_link, download_link, linkedin_profile, tagIds } = body
 
     // Validate required fields
-    if (!resourceData.submitted_by || !resourceData.date || !resourceData.title) {
+    if (!submitted_by || !date || !title) {
       return NextResponse.json({ error: "Missing required fields: submitted_by, date, title" }, { status: 400 })
     }
 
     // Create the resource
     const resource = await createResource({
-      submitted_by: resourceData.submitted_by,
-      date: resourceData.date,
-      author: resourceData.author || null,
-      title: resourceData.title,
-      description: resourceData.description || null,
-      url_link: resourceData.url_link || null,
-      download_link: resourceData.download_link || null,
-      linkedin_profile: resourceData.linkedin_profile || null,
+      submitted_by: submitted_by,
+      date: date,
+      author: author || null,
+      title: title,
+      description: description || null,
+      url_link: url_link || null,
+      download_link: download_link || null,
+      linkedin_profile: linkedin_profile || null,
     })
 
     // Add tags if provided
