@@ -49,6 +49,7 @@ export default function ResourcesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [linkedinError, setLinkedinError] = useState("")
+  const [descriptionError, setDescriptionError] = useState("")
 
   useEffect(() => {
     fetchTags()
@@ -190,6 +191,17 @@ export default function ResourcesPage() {
     return url.includes("https://www.linkedin.com/in/")
   }
 
+  const validateDescription = (description: string) => {
+    const length = description.length
+    if (length < 100) {
+      return "Description must be at least 100 characters"
+    }
+    if (length > 600) {
+      return "Description must not exceed 600 characters"
+    }
+    return ""
+  }
+
   const handleSubmitInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setSubmitFormData((prev) => ({ ...prev, [name]: value }))
@@ -201,6 +213,12 @@ export default function ResourcesPage() {
       } else {
         setLinkedinError("")
       }
+    }
+
+    // Validate description on change
+    if (name === "description") {
+      const error = validateDescription(value)
+      setDescriptionError(error)
     }
   }
 
@@ -214,6 +232,12 @@ export default function ResourcesPage() {
     // Final validation check
     if (submitFormData.linkedin_profile && !validateLinkedInUrl(submitFormData.linkedin_profile)) {
       setLinkedinError("LinkedIn URL must include 'https://www.linkedin.com/in/'")
+      return
+    }
+
+    const descError = validateDescription(submitFormData.description)
+    if (descError) {
+      setDescriptionError(descError)
       return
     }
 
@@ -244,6 +268,7 @@ export default function ResourcesPage() {
         })
         setSubmitSelectedTags([])
         setLinkedinError("")
+        setDescriptionError("")
       } else {
         console.error("Error submitting resource")
       }
@@ -258,6 +283,7 @@ export default function ResourcesPage() {
     setIsSubmitDialogOpen(false)
     setIsSubmitted(false)
     setLinkedinError("")
+    setDescriptionError("")
   }
 
   // Count available tags for display
@@ -271,6 +297,9 @@ export default function ResourcesPage() {
       }, 0)
     )
   }, 0)
+
+  const descriptionLength = submitFormData.description.length
+  const isDescriptionValid = descriptionLength >= 100 && descriptionLength <= 600
 
   if (loading) {
     return (
@@ -411,7 +440,23 @@ export default function ResourcesPage() {
                           onChange={handleSubmitInputChange}
                           rows={4}
                           required
+                          className={descriptionError ? "border-red-500" : ""}
+                          maxLength={600}
                         />
+                        <div className="flex justify-between items-center mt-1">
+                          <div>{descriptionError && <p className="text-red-500 text-sm">{descriptionError}</p>}</div>
+                          <p
+                            className={`text-sm ${
+                              descriptionLength < 100
+                                ? "text-red-500"
+                                : descriptionLength > 600
+                                  ? "text-red-500"
+                                  : "text-gray-500"
+                            }`}
+                          >
+                            {descriptionLength}/600 characters (minimum 100)
+                          </p>
+                        </div>
                       </div>
 
                       <div>
@@ -483,7 +528,10 @@ export default function ResourcesPage() {
                       </div>
 
                       <div className="flex justify-end pt-6 border-t border-gray-200">
-                        <Button type="submit" disabled={isSubmitting || !!linkedinError}>
+                        <Button
+                          type="submit"
+                          disabled={isSubmitting || !!linkedinError || !!descriptionError || !isDescriptionValid}
+                        >
                           {isSubmitting ? "Submitting..." : "Submit Resource"}
                         </Button>
                       </div>
