@@ -514,7 +514,7 @@ export default function AdminPage() {
                         <Input
                           id="author"
                           name="author"
-                          defaultValue={editingResource?.["autor/s"] || ""}
+                          defaultValue={editingResource?.["author/s"] || ""}
                           placeholder="Enter author name(s)"
                         />
                       </div>

@@ -23,7 +23,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       ;[resource] = await sql`
         UPDATE resources 
         SET submitted_by = ${submitted_by}, date = ${date}, title = ${title}, 
-            description = ${description}, "autor/s" = ${author}, url_link = ${url_link}, 
+            description = ${description}, "author/s" = ${author}, url_link = ${url_link}, 
             download_link = ${download_link}, linkedin_profile = ${linkedin_profile},
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ${resourceId}
@@ -34,7 +34,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       ;[resource] = await sql`
         UPDATE resources 
         SET submitted_by = ${submitted_by}, date = ${date}, title = ${title}, 
-            description = ${description}, "autor/s" = ${author}, url_link = ${url_link}, 
+            description = ${description}, "author/s" = ${author}, url_link = ${url_link}, 
             download_link = ${download_link},
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ${resourceId}
