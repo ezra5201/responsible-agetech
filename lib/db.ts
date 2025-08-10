@@ -71,6 +71,7 @@ export interface Resource {
   url_link: string | null
   download_link: string | null
   linkedin_profile: string | null
+  submitter_email: string | null
   created_at: string
   updated_at: string
 }
