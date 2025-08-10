@@ -135,9 +135,15 @@ export default function ResourcesPage() {
     try {
       const response = await fetch("/api/tags?public=true")
       const data = await response.json()
-      setSubmitTagHierarchy(data)
+
+      if (data && data.hierarchy) {
+        setSubmitTagHierarchy(data.hierarchy)
+      } else {
+        setSubmitTagHierarchy({})
+      }
     } catch (error) {
       console.error("Error fetching submit tags:", error)
+      setSubmitTagHierarchy({})
     }
   }
 
@@ -427,12 +433,16 @@ export default function ResourcesPage() {
                         <p className="text-sm text-gray-600 mb-3">
                           Select relevant tags to help others find your resource
                         </p>
-                        <NewTagSelector
-                          hierarchy={submitTagHierarchy}
-                          selectedTags={submitSelectedTags}
-                          onTagChange={handleSubmitTagChange}
-                          showAddTag={false}
-                        />
+                        {Object.keys(submitTagHierarchy).length > 0 ? (
+                          <NewTagSelector
+                            hierarchy={submitTagHierarchy}
+                            selectedTags={submitSelectedTags}
+                            onTagChange={handleSubmitTagChange}
+                            showAddTag={false}
+                          />
+                        ) : (
+                          <div className="text-sm text-gray-500">Loading tags...</div>
+                        )}
                       </div>
 
                       <div className="flex justify-end pt-6 border-t border-gray-200">
