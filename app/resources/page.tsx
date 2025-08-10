@@ -50,7 +50,7 @@ export default function ResourcesPage() {
         ...(selectedTags.length > 0 && { tags: selectedTags.join(",") }),
       })
 
-      const response = await fetch(`/api/resources?${params}`)
+      const response = await fetch(`/api/resources?${params}&status=published`)
 
       if (!response.ok) {
         const errorText = await response.text()
