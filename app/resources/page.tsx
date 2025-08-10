@@ -23,6 +23,8 @@ export default function ResourcesPage() {
   const [tagHierarchy, setTagHierarchy] = useState<any>({})
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false)
   const [viewMode, setViewMode] = useState<"cards" | "list" | "compact">("list")
+  const [showSearch, setShowSearch] = useState(false)
+  const [showSort, setShowSort] = useState(false)
 
   useEffect(() => {
     fetchTags()
@@ -110,6 +112,22 @@ export default function ResourcesPage() {
     setSearchTerm("")
   }
 
+  const handleSearchToggle = () => {
+    setShowSearch(!showSearch)
+    setShowSort(false)
+  }
+
+  const handleSortToggle = () => {
+    setShowSort(!showSort)
+    setShowSearch(false)
+  }
+
+  const handleFilterToggle = () => {
+    setIsFilterPanelOpen(true)
+    setShowSearch(false)
+    setShowSort(false)
+  }
+
   // Count available tags for display
   const availableTagsCount = Object.values(tagHierarchy).reduce((total, category: any) => {
     return (
@@ -156,146 +174,141 @@ export default function ResourcesPage() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">Resources</h1>
-
-          {/* Search and Sort Controls */}
-          <div className="bg-white rounded-lg shadow-sm border p-4 mb-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              {/* Search */}
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input
-                    type="text"
-                    placeholder="Search resources..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-
-              {/* Sort Controls */}
-              <div className="flex gap-2">
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="date">Date</option>
-                  <option value="title">Title</option>
-                  <option value="submitted_by">Submitted By</option>
-                </select>
-                <button
-                  onClick={() => setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))}
-                  className="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50 focus:ring-2 focus:ring-blue-500"
-                >
-                  {sortOrder === "asc" ? <SortAsc className="w-4 h-4" /> : <SortDesc className="w-4 h-4" />}
-                </button>
-
-                {/* View Toggle - Hidden on mobile, shown on tablet and up */}
-                <div className="hidden md:flex border border-gray-300 rounded-md overflow-hidden">
-                  <button
-                    onClick={() => setViewMode("cards")}
-                    className={`px-3 py-2 flex items-center gap-1 text-sm font-medium transition-colors ${
-                      viewMode === "cards" ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <Grid3X3 className="w-4 h-4" />
-                    Full
-                  </button>
-                  <button
-                    onClick={() => setViewMode("list")}
-                    className={`px-3 py-2 flex items-center gap-1 text-sm font-medium transition-colors border-l border-gray-300 ${
-                      viewMode === "list" ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <List className="w-4 h-4" />
-                    Brief
-                  </button>
-                  <button
-                    onClick={() => setViewMode("compact")}
-                    className={`px-3 py-2 flex items-center gap-1 text-sm font-medium transition-colors border-l border-gray-300 ${
-                      viewMode === "compact" ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <Smartphone className="w-4 h-4" />
-                    Minimal
-                  </button>
-                </div>
-
-                {/* Mobile Filter Button */}
-                <Button variant="outline" onClick={() => setIsFilterPanelOpen(true)} className="md:hidden">
-                  <Filter className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Mobile View Toggle - Shown only on mobile */}
-            <div className="flex md:hidden mt-4 pt-4 border-t border-gray-200">
-              <div className="flex w-full border border-gray-300 rounded-md overflow-hidden">
-                <button
-                  onClick={() => setViewMode("cards")}
-                  className={`flex-1 px-2 py-2 flex items-center justify-center gap-1 text-xs font-medium transition-colors ${
-                    viewMode === "cards" ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"
-                  }`}
-                >
-                  <Grid3X3 className="w-3 h-3" />
-                  Full
-                </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`flex-1 px-2 py-2 flex items-center justify-center gap-1 text-xs font-medium transition-colors border-l border-gray-300 ${
-                    viewMode === "list" ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"
-                  }`}
-                >
-                  <List className="w-3 h-3" />
-                  Brief
-                </button>
-                <button
-                  onClick={() => setViewMode("compact")}
-                  className={`flex-1 px-2 py-2 flex items-center justify-center gap-1 text-xs font-medium transition-colors border-l border-gray-300 ${
-                    viewMode === "compact" ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"
-                  }`}
-                >
-                  <Smartphone className="w-3 h-3" />
-                  Minimal
-                </button>
-              </div>
+          {/* Header with Title and Icons */}
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold text-gray-900">Resources</h1>
+            <div className="flex gap-4">
+              <button
+                onClick={handleSearchToggle}
+                className={`p-2 rounded-md transition-colors ${
+                  showSearch ? "bg-blue-100 text-blue-600" : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                <Search className="w-5 h-5" />
+              </button>
+              <button
+                onClick={handleSortToggle}
+                className={`p-2 rounded-md transition-colors ${
+                  showSort ? "bg-blue-100 text-blue-600" : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                {sortOrder === "asc" ? <SortAsc className="w-5 h-5" /> : <SortDesc className="w-5 h-5" />}
+              </button>
+              <button
+                onClick={handleFilterToggle}
+                className="p-2 rounded-md text-gray-600 hover:bg-gray-100 transition-colors relative"
+              >
+                <Filter className="w-5 h-5" />
+                {selectedTags.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {selectedTags.length}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
+
+          {/* Search Section */}
+          {showSearch && (
+            <div className="bg-white rounded-lg shadow-sm border p-4 mb-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Search resources..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  autoFocus
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Sort Section */}
+          {showSort && (
+            <div className="bg-white rounded-lg shadow-sm border p-4 mb-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Sort by</label>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="date">Date</option>
+                    <option value="title">Title</option>
+                    <option value="submitted_by">Submitted By</option>
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Order</label>
+                  <select
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="desc">Newest First</option>
+                    <option value="asc">Oldest First</option>
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">View</label>
+                  <div className="flex border border-gray-300 rounded-md overflow-hidden">
+                    <button
+                      onClick={() => setViewMode("cards")}
+                      className={`flex-1 px-2 py-2 flex items-center justify-center gap-1 text-xs font-medium transition-colors ${
+                        viewMode === "cards" ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <Grid3X3 className="w-3 h-3" />
+                      Full
+                    </button>
+                    <button
+                      onClick={() => setViewMode("list")}
+                      className={`flex-1 px-2 py-2 flex items-center justify-center gap-1 text-xs font-medium transition-colors border-l border-gray-300 ${
+                        viewMode === "list" ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <List className="w-3 h-3" />
+                      Brief
+                    </button>
+                    <button
+                      onClick={() => setViewMode("compact")}
+                      className={`flex-1 px-2 py-2 flex items-center justify-center gap-1 text-xs font-medium transition-colors border-l border-gray-300 ${
+                        viewMode === "compact" ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <Smartphone className="w-3 h-3" />
+                      Minimal
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Active Filters Bar */}
-          <div className="mb-6">
-            <ActiveFiltersBar
-              hierarchy={tagHierarchy}
-              selectedTags={selectedTags}
-              onTagToggle={toggleTag}
-              onClearAll={clearAllFilters}
-              onOpenFilters={() => setIsFilterPanelOpen(true)}
-            />
-          </div>
-
-          {/* Results Count and Filter Info */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="text-sm text-gray-600">
-              <div>
-                Showing {filteredResources.length} of {resources.length} resources
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {availableTagsCount} filter tags available (only showing tags with resources)
-              </div>
+          {selectedTags.length > 0 && (
+            <div className="mb-6">
+              <ActiveFiltersBar
+                hierarchy={tagHierarchy}
+                selectedTags={selectedTags}
+                onTagToggle={toggleTag}
+                onClearAll={clearAllFilters}
+                onOpenFilters={() => setIsFilterPanelOpen(true)}
+              />
             </div>
+          )}
 
-            {/* Desktop Filter Button */}
-            <Button
-              variant="outline"
-              onClick={() => setIsFilterPanelOpen(true)}
-              className="hidden md:flex items-center gap-2"
-            >
-              <Filter className="w-4 h-4" />
-              Filter by Tags ({availableTagsCount} available)
-            </Button>
+          {/* Results Count */}
+          <div className="text-sm text-gray-600 mb-6">
+            <div>
+              Showing {filteredResources.length} of {resources.length} resources
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              {availableTagsCount} filter tags available (only showing tags with resources)
+            </div>
           </div>
 
           {/* Resources Display */}
