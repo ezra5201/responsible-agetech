@@ -48,6 +48,7 @@ export default function ResourcesPage() {
   const [submitTagHierarchy, setSubmitTagHierarchy] = useState<TagHierarchy>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [linkedinError, setLinkedinError] = useState("")
 
   useEffect(() => {
     fetchTags()
@@ -184,9 +185,23 @@ export default function ResourcesPage() {
     setShowSort(false)
   }
 
+  const validateLinkedInUrl = (url: string) => {
+    if (!url) return true // Allow empty since it's required field validation will handle it
+    return url.includes("https://www.linkedin.com/in/")
+  }
+
   const handleSubmitInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setSubmitFormData((prev) => ({ ...prev, [name]: value }))
+
+    // Validate LinkedIn URL on change
+    if (name === "linkedin_profile") {
+      if (value && !validateLinkedInUrl(value)) {
+        setLinkedinError("LinkedIn URL must include 'https://www.linkedin.com/in/'")
+      } else {
+        setLinkedinError("")
+      }
+    }
   }
 
   const handleSubmitTagChange = (tagId: number, checked: boolean) => {
@@ -195,6 +210,13 @@ export default function ResourcesPage() {
 
   const handleSubmitResource = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Final validation check
+    if (submitFormData.linkedin_profile && !validateLinkedInUrl(submitFormData.linkedin_profile)) {
+      setLinkedinError("LinkedIn URL must include 'https://www.linkedin.com/in/'")
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -221,6 +243,7 @@ export default function ResourcesPage() {
           linkedin_profile: "",
         })
         setSubmitSelectedTags([])
+        setLinkedinError("")
       } else {
         console.error("Error submitting resource")
       }
@@ -234,6 +257,7 @@ export default function ResourcesPage() {
   const handleDialogClose = () => {
     setIsSubmitDialogOpen(false)
     setIsSubmitted(false)
+    setLinkedinError("")
   }
 
   // Count available tags for display
@@ -434,8 +458,11 @@ export default function ResourcesPage() {
                           type="url"
                           value={submitFormData.linkedin_profile}
                           onChange={handleSubmitInputChange}
+                          placeholder="https://www.linkedin.com/in/yourname"
                           required
+                          className={linkedinError ? "border-red-500" : ""}
                         />
+                        {linkedinError && <p className="text-red-500 text-sm mt-1">{linkedinError}</p>}
                       </div>
 
                       <div>
@@ -456,7 +483,7 @@ export default function ResourcesPage() {
                       </div>
 
                       <div className="flex justify-end pt-6 border-t border-gray-200">
-                        <Button type="submit" disabled={isSubmitting}>
+                        <Button type="submit" disabled={isSubmitting || !!linkedinError}>
                           {isSubmitting ? "Submitting..." : "Submit Resource"}
                         </Button>
                       </div>
