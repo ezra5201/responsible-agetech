@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import type { ResourceWithTags, Tag } from "@/lib/db"
 import { ResourceCard } from "@/components/resource-card"
@@ -8,8 +10,14 @@ import { ResourceCompactItem } from "@/components/resource-compact-item"
 import { SlidingFilterPanel } from "@/components/sliding-filter-panel"
 import { ActiveFiltersBar } from "@/components/active-filters-bar"
 import { resourceStyles } from "@/lib/styles"
-import { Search, SortAsc, SortDesc, Filter, Grid3X3, List, Smartphone } from "lucide-react"
+import { Search, SortAsc, SortDesc, Filter, Grid3X3, List, Smartphone, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { NewTagSelector } from "@/components/new-tag-selector"
+import type { TagHierarchy } from "@/lib/db"
 
 export default function ResourcesPage() {
   const [resources, setResources] = useState<ResourceWithTags[]>([])
@@ -25,6 +33,21 @@ export default function ResourcesPage() {
   const [viewMode, setViewMode] = useState<"cards" | "list" | "compact">("list")
   const [showSearch, setShowSearch] = useState(false)
   const [showSort, setShowSort] = useState(false)
+  const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false)
+  const [submitFormData, setSubmitFormData] = useState({
+    submitted_by: "",
+    date: new Date().toISOString().split("T")[0],
+    title: "",
+    description: "",
+    author: "",
+    url_link: "",
+    download_link: "",
+    linkedin_profile: "",
+  })
+  const [submitSelectedTags, setSubmitSelectedTags] = useState<number[]>([])
+  const [submitTagHierarchy, setSubmitTagHierarchy] = useState<TagHierarchy>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(false)
 
   useEffect(() => {
     fetchTags()
@@ -39,6 +62,12 @@ export default function ResourcesPage() {
     const isMobile = window.innerWidth < 768 // Tailwind's md breakpoint
     setViewMode(isMobile ? "compact" : "list")
   }, [])
+
+  useEffect(() => {
+    if (isSubmitDialogOpen) {
+      fetchSubmitTags()
+    }
+  }, [isSubmitDialogOpen])
 
   const fetchResources = async () => {
     try {
@@ -102,6 +131,16 @@ export default function ResourcesPage() {
     }
   }
 
+  const fetchSubmitTags = async () => {
+    try {
+      const response = await fetch("/api/tags?public=true")
+      const data = await response.json()
+      setSubmitTagHierarchy(data)
+    } catch (error) {
+      console.error("Error fetching submit tags:", error)
+    }
+  }
+
   const toggleTag = (tagName: string) => {
     setSelectedTags((prev) => (prev.includes(tagName) ? prev.filter((t) => t !== tagName) : [...prev, tagName]))
   }
@@ -132,6 +171,58 @@ export default function ResourcesPage() {
     setIsFilterPanelOpen(true)
     setShowSearch(false)
     setShowSort(false)
+  }
+
+  const handleSubmitInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setSubmitFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleSubmitTagChange = (tagId: number, checked: boolean) => {
+    setSubmitSelectedTags((prev) => (checked ? [...prev, tagId] : prev.filter((id) => id !== tagId)))
+  }
+
+  const handleSubmitResource = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+
+    try {
+      const response = await fetch("/api/resources", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...submitFormData,
+          tagIds: submitSelectedTags,
+        }),
+      })
+
+      if (response.ok) {
+        setIsSubmitted(true)
+        // Reset form
+        setSubmitFormData({
+          submitted_by: "",
+          date: new Date().toISOString().split("T")[0],
+          title: "",
+          description: "",
+          author: "",
+          url_link: "",
+          download_link: "",
+          linkedin_profile: "",
+        })
+        setSubmitSelectedTags([])
+      } else {
+        console.error("Error submitting resource")
+      }
+    } catch (error) {
+      console.error("Error submitting resource:", error)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleDialogClose = () => {
+    setIsSubmitDialogOpen(false)
+    setIsSubmitted(false)
   }
 
   // Count available tags for display
@@ -211,6 +302,148 @@ export default function ResourcesPage() {
                   </span>
                 )}
               </button>
+              <Dialog open={isSubmitDialogOpen} onOpenChange={setIsSubmitDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="flex items-center gap-2">
+                    <Plus className="w-4 h-4" />
+                    Submit a Resource
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl">
+                  <DialogHeader>
+                    <DialogTitle>Submit a Resource</DialogTitle>
+                  </DialogHeader>
+
+                  {isSubmitted ? (
+                    <div className="text-center py-8">
+                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Thank you for your submission!</h3>
+                      <p className="text-gray-600 mb-4">
+                        Your resource is now under review. We'll review it and publish it to the public library once
+                        approved.
+                      </p>
+                      <Button onClick={handleDialogClose}>Close</Button>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleSubmitResource} className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <Label htmlFor="submitted_by">Your Name *</Label>
+                          <Input
+                            id="submitted_by"
+                            name="submitted_by"
+                            value={submitFormData.submitted_by}
+                            onChange={handleSubmitInputChange}
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="date">Date</Label>
+                          <Input
+                            id="date"
+                            name="date"
+                            type="date"
+                            value={submitFormData.date}
+                            onChange={handleSubmitInputChange}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="title">Resource Title *</Label>
+                        <Input
+                          id="title"
+                          name="title"
+                          value={submitFormData.title}
+                          onChange={handleSubmitInputChange}
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="description">Description *</Label>
+                        <Textarea
+                          id="description"
+                          name="description"
+                          value={submitFormData.description}
+                          onChange={handleSubmitInputChange}
+                          rows={4}
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="author">Author(s)</Label>
+                        <Input
+                          id="author"
+                          name="author"
+                          value={submitFormData.author}
+                          onChange={handleSubmitInputChange}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <Label htmlFor="url_link">URL Link</Label>
+                          <Input
+                            id="url_link"
+                            name="url_link"
+                            type="url"
+                            value={submitFormData.url_link}
+                            onChange={handleSubmitInputChange}
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="download_link">Download Link</Label>
+                          <Input
+                            id="download_link"
+                            name="download_link"
+                            type="url"
+                            value={submitFormData.download_link}
+                            onChange={handleSubmitInputChange}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="linkedin_profile">LinkedIn Profile</Label>
+                        <Input
+                          id="linkedin_profile"
+                          name="linkedin_profile"
+                          type="url"
+                          value={submitFormData.linkedin_profile}
+                          onChange={handleSubmitInputChange}
+                        />
+                      </div>
+
+                      <div>
+                        <Label>Tags</Label>
+                        <p className="text-sm text-gray-600 mb-3">
+                          Select relevant tags to help others find your resource
+                        </p>
+                        <NewTagSelector
+                          hierarchy={submitTagHierarchy}
+                          selectedTags={submitSelectedTags}
+                          onTagChange={handleSubmitTagChange}
+                          showAddTag={false}
+                        />
+                      </div>
+
+                      <div className="flex justify-end pt-6 border-t border-gray-200">
+                        <Button type="submit" disabled={isSubmitting}>
+                          {isSubmitting ? "Submitting..." : "Submit Resource"}
+                        </Button>
+                      </div>
+                    </form>
+                  )}
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
 
