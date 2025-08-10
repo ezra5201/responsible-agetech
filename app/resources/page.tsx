@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react"
 import type { ResourceWithTags, Tag } from "@/lib/db"
 import { ResourceCard } from "@/components/resource-card"
+import { ResourceListItem } from "@/components/resource-list-item"
 import { SlidingFilterPanel } from "@/components/sliding-filter-panel"
 import { ActiveFiltersBar } from "@/components/active-filters-bar"
 import { resourceStyles } from "@/lib/styles"
-import { Search, SortAsc, SortDesc, Filter } from "lucide-react"
+import { Search, SortAsc, SortDesc, Filter, Grid3X3, List } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export default function ResourcesPage() {
@@ -20,6 +21,7 @@ export default function ResourcesPage() {
   const [error, setError] = useState<string | null>(null)
   const [tagHierarchy, setTagHierarchy] = useState<any>({})
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false)
+  const [viewMode, setViewMode] = useState<"cards" | "list">("cards")
 
   useEffect(() => {
     fetchTags()
@@ -190,6 +192,28 @@ export default function ResourcesPage() {
                   {sortOrder === "asc" ? <SortAsc className="w-4 h-4" /> : <SortDesc className="w-4 h-4" />}
                 </button>
 
+                {/* View Toggle */}
+                <div className="flex border border-gray-300 rounded-md overflow-hidden">
+                  <button
+                    onClick={() => setViewMode("cards")}
+                    className={`px-3 py-2 flex items-center gap-1 text-sm font-medium transition-colors ${
+                      viewMode === "cards" ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <Grid3X3 className="w-4 h-4" />
+                    Cards
+                  </button>
+                  <button
+                    onClick={() => setViewMode("list")}
+                    className={`px-3 py-2 flex items-center gap-1 text-sm font-medium transition-colors border-l border-gray-300 ${
+                      viewMode === "list" ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <List className="w-4 h-4" />
+                    List
+                  </button>
+                </div>
+
                 {/* Mobile Filter Button */}
                 <Button variant="outline" onClick={() => setIsFilterPanelOpen(true)} className="sm:hidden">
                   <Filter className="w-4 h-4" />
@@ -231,12 +255,20 @@ export default function ResourcesPage() {
             </Button>
           </div>
 
-          {/* Resources Grid */}
-          <div className={resourceStyles.grid.container}>
-            {filteredResources.map((resource) => (
-              <ResourceCard key={resource.id} resource={resource} />
-            ))}
-          </div>
+          {/* Resources Display */}
+          {viewMode === "cards" ? (
+            <div className={resourceStyles.grid.container}>
+              {filteredResources.map((resource) => (
+                <ResourceCard key={resource.id} resource={resource} />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredResources.map((resource) => (
+                <ResourceListItem key={resource.id} resource={resource} />
+              ))}
+            </div>
+          )}
 
           {filteredResources.length === 0 && (
             <div className="text-center py-12">
