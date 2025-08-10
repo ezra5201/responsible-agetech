@@ -67,7 +67,7 @@ export interface Resource {
   date: string
   title: string
   description: string | null
-  author: string | null
+  "autor/s": string | null
   url_link: string | null
   download_link: string | null
   linkedin_profile: string | null
