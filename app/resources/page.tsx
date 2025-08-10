@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import type { ResourceWithTags, Tag } from "@/lib/db"
 import { ResourceCard } from "@/components/resource-card"
@@ -8,8 +10,14 @@ import { ResourceCompactItem } from "@/components/resource-compact-item"
 import { SlidingFilterPanel } from "@/components/sliding-filter-panel"
 import { ActiveFiltersBar } from "@/components/active-filters-bar"
 import { resourceStyles } from "@/lib/styles"
-import { Search, SortAsc, SortDesc, Filter, Grid3X3, List, Smartphone } from "lucide-react"
+import { Search, SortAsc, SortDesc, Filter, Grid3X3, List, Smartphone, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { NewTagSelector } from "@/components/new-tag-selector"
+import type { TagHierarchy } from "@/lib/db"
 
 export default function ResourcesPage() {
   const [resources, setResources] = useState<ResourceWithTags[]>([])
@@ -25,6 +33,24 @@ export default function ResourcesPage() {
   const [viewMode, setViewMode] = useState<"cards" | "list" | "compact">("list")
   const [showSearch, setShowSearch] = useState(false)
   const [showSort, setShowSort] = useState(false)
+  const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false)
+  const [submitFormData, setSubmitFormData] = useState({
+    submitted_by: "",
+    date: new Date().toISOString().split("T")[0],
+    title: "",
+    description: "",
+    author: "",
+    url_link: "",
+    download_link: "",
+    linkedin_profile: "",
+    submitter_email: "",
+  })
+  const [submitSelectedTags, setSubmitSelectedTags] = useState<number[]>([])
+  const [submitTagHierarchy, setSubmitTagHierarchy] = useState<TagHierarchy>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [linkedinError, setLinkedinError] = useState("")
+  const [descriptionError, setDescriptionError] = useState("")
 
   useEffect(() => {
     fetchTags()
@@ -40,6 +66,12 @@ export default function ResourcesPage() {
     setViewMode(isMobile ? "compact" : "list")
   }, [])
 
+  useEffect(() => {
+    if (isSubmitDialogOpen) {
+      fetchSubmitTags()
+    }
+  }, [isSubmitDialogOpen])
+
   const fetchResources = async () => {
     try {
       setLoading(true)
@@ -50,7 +82,7 @@ export default function ResourcesPage() {
         ...(selectedTags.length > 0 && { tags: selectedTags.join(",") }),
       })
 
-      const response = await fetch(`/api/resources?${params}`)
+      const response = await fetch(`/api/resources?${params}&status=published`)
 
       if (!response.ok) {
         const errorText = await response.text()
@@ -88,7 +120,7 @@ export default function ResourcesPage() {
       const response = await fetch("/api/tags?public=true")
       const data = await response.json()
 
-      if (data.flat && Array.isArray(data.flat)) {
+      if (data && data.flat && Array.isArray(data.flat)) {
         setTags(data.flat)
         setTagHierarchy(data.hierarchy || {})
       } else {
@@ -99,6 +131,27 @@ export default function ResourcesPage() {
       console.error("Error fetching tags:", error)
       setTags([])
       setTagHierarchy({})
+    }
+  }
+
+  const fetchSubmitTags = async () => {
+    try {
+      const response = await fetch("/api/tags?public=true")
+      const data = await response.json()
+
+      if (data && data.hierarchy) {
+        // Filter to only show Thematic Topics
+        const filteredHierarchy: TagHierarchy = {}
+        if (data.hierarchy["Thematic Topics"]) {
+          filteredHierarchy["Thematic Topics"] = data.hierarchy["Thematic Topics"]
+        }
+        setSubmitTagHierarchy(filteredHierarchy)
+      } else {
+        setSubmitTagHierarchy({})
+      }
+    } catch (error) {
+      console.error("Error fetching submit tags:", error)
+      setSubmitTagHierarchy({})
     }
   }
 
@@ -134,15 +187,123 @@ export default function ResourcesPage() {
     setShowSort(false)
   }
 
+  const validateLinkedInUrl = (url: string) => {
+    if (!url) return false // Now required, so empty is invalid
+    return url.includes("https://www.linkedin.com/in/")
+  }
+
+  const validateDescription = (description: string) => {
+    const length = description.length
+    if (length < 100) {
+      return "Description must be at least 100 characters"
+    }
+    if (length > 600) {
+      return "Description must not exceed 600 characters"
+    }
+    return ""
+  }
+
+  const handleSubmitInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setSubmitFormData((prev) => ({ ...prev, [name]: value }))
+
+    // Validate LinkedIn URL on change
+    if (name === "linkedin_profile") {
+      if (!value) {
+        setLinkedinError("LinkedIn Profile URL is required")
+      } else if (!validateLinkedInUrl(value)) {
+        setLinkedinError("LinkedIn URL must include 'https://www.linkedin.com/in/'")
+      } else {
+        setLinkedinError("")
+      }
+    }
+
+    // Validate description on change
+    if (name === "description") {
+      const error = validateDescription(value)
+      setDescriptionError(error)
+    }
+  }
+
+  const handleSubmitTagChange = (tagId: number, checked: boolean) => {
+    setSubmitSelectedTags((prev) => (checked ? [...prev, tagId] : prev.filter((id) => id !== tagId)))
+  }
+
+  const handleSubmitResource = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    // Final validation check
+    if (submitFormData.linkedin_profile && !validateLinkedInUrl(submitFormData.linkedin_profile)) {
+      setLinkedinError("LinkedIn URL must include 'https://www.linkedin.com/in/'")
+      return
+    }
+
+    const descError = validateDescription(submitFormData.description)
+    if (descError) {
+      setDescriptionError(descError)
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const response = await fetch("/api/resources", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...submitFormData,
+          tagIds: submitSelectedTags,
+        }),
+      })
+
+      if (response.ok) {
+        setIsSubmitted(true)
+        // Reset form
+        setSubmitFormData({
+          submitted_by: "",
+          date: new Date().toISOString().split("T")[0],
+          title: "",
+          description: "",
+          author: "",
+          url_link: "",
+          download_link: "",
+          linkedin_profile: "",
+          submitter_email: "",
+        })
+        setSubmitSelectedTags([])
+        setLinkedinError("")
+        setDescriptionError("")
+      } else {
+        console.error("Error submitting resource")
+      }
+    } catch (error) {
+      console.error("Error submitting resource:", error)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleDialogClose = () => {
+    setIsSubmitDialogOpen(false)
+    setIsSubmitted(false)
+    setLinkedinError("")
+    setDescriptionError("")
+  }
+
   // Count available tags for display
-  const availableTagsCount = Object.values(tagHierarchy).reduce((total, category: any) => {
+  const availableTagsCount = Object.values(tagHierarchy || {}).reduce((total, category: any) => {
+    if (!category || !category.subcategories) return total
     return (
       total +
       Object.values(category.subcategories).reduce((subTotal, subcategory: any) => {
+        if (!subcategory || !subcategory.tags) return subTotal
         return subTotal + subcategory.tags.length
       }, 0)
     )
   }, 0)
+
+  const descriptionLength = submitFormData.description.length
+  const isDescriptionValid = descriptionLength >= 100 && descriptionLength <= 600
 
   if (loading) {
     return (
@@ -211,6 +372,199 @@ export default function ResourcesPage() {
                   </span>
                 )}
               </button>
+              <Dialog open={isSubmitDialogOpen} onOpenChange={setIsSubmitDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="flex items-center gap-2">
+                    <Plus className="w-4 h-4" />
+                    Submit a Resource
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl">
+                  <DialogHeader>
+                    <DialogTitle>Submit a Resource</DialogTitle>
+                  </DialogHeader>
+
+                  {isSubmitted ? (
+                    <div className="text-center py-8">
+                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Thank you for your submission!</h3>
+                      <p className="text-gray-600 mb-4">
+                        Your resource is now under review. We'll review it and publish it to the public library once
+                        approved.
+                      </p>
+                      <Button onClick={handleDialogClose}>Close</Button>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleSubmitResource} className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <Label htmlFor="submitted_by">Your Name *</Label>
+                          <Input
+                            id="submitted_by"
+                            name="submitted_by"
+                            value={submitFormData.submitted_by}
+                            onChange={handleSubmitInputChange}
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="date">Date</Label>
+                          <Input
+                            id="date"
+                            name="date"
+                            type="date"
+                            value={submitFormData.date}
+                            onChange={handleSubmitInputChange}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="title">Resource Title *</Label>
+                        <Input
+                          id="title"
+                          name="title"
+                          value={submitFormData.title}
+                          onChange={handleSubmitInputChange}
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="description">Description *</Label>
+                        <Textarea
+                          id="description"
+                          name="description"
+                          value={submitFormData.description}
+                          onChange={handleSubmitInputChange}
+                          rows={4}
+                          required
+                          className={descriptionError ? "border-red-500" : ""}
+                          maxLength={600}
+                        />
+                        <div className="flex justify-between items-center mt-1">
+                          <div>{descriptionError && <p className="text-red-500 text-sm">{descriptionError}</p>}</div>
+                          <p
+                            className={`text-sm ${
+                              descriptionLength < 100
+                                ? "text-red-500"
+                                : descriptionLength > 600
+                                  ? "text-red-500"
+                                  : "text-gray-500"
+                            }`}
+                          >
+                            {descriptionLength}/600 characters (minimum 100)
+                          </p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="author">Author(s) *</Label>
+                        <Input
+                          id="author"
+                          name="author"
+                          value={submitFormData.author}
+                          onChange={handleSubmitInputChange}
+                          required
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <Label htmlFor="url_link">URL Link *</Label>
+                          <Input
+                            id="url_link"
+                            name="url_link"
+                            type="url"
+                            value={submitFormData.url_link}
+                            onChange={handleSubmitInputChange}
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="download_link">Download Link</Label>
+                          <Input
+                            id="download_link"
+                            name="download_link"
+                            type="url"
+                            value={submitFormData.download_link}
+                            onChange={handleSubmitInputChange}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <Label htmlFor="submitter_email">Submitter E-Mail *</Label>
+                          <Input
+                            id="submitter_email"
+                            name="submitter_email"
+                            type="email"
+                            value={submitFormData.submitter_email}
+                            onChange={handleSubmitInputChange}
+                            placeholder="your.email@example.com"
+                            required
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Your email will not be publicly visible</p>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="linkedin_profile">LinkedIn Profile *</Label>
+                          <Input
+                            id="linkedin_profile"
+                            name="linkedin_profile"
+                            type="url"
+                            value={submitFormData.linkedin_profile}
+                            onChange={handleSubmitInputChange}
+                            placeholder="https://www.linkedin.com/in/yourname"
+                            required
+                            className={linkedinError ? "border-red-500" : ""}
+                          />
+                          {linkedinError && <p className="text-red-500 text-sm mt-1">{linkedinError}</p>}
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label>Tags</Label>
+                        <p className="text-sm text-gray-600 mb-3">
+                          Select relevant tags to help others find your resource
+                        </p>
+                        {Object.keys(submitTagHierarchy).length > 0 ? (
+                          <NewTagSelector
+                            hierarchy={submitTagHierarchy}
+                            selectedTags={submitSelectedTags}
+                            onTagChange={handleSubmitTagChange}
+                            showAddTag={false}
+                          />
+                        ) : (
+                          <div className="text-sm text-gray-500">Loading tags...</div>
+                        )}
+                      </div>
+
+                      <div className="flex justify-end pt-6 border-t border-gray-200">
+                        <Button
+                          type="submit"
+                          disabled={
+                            isSubmitting ||
+                            !!linkedinError ||
+                            !!descriptionError ||
+                            !isDescriptionValid ||
+                            !submitFormData.linkedin_profile.trim()
+                          }
+                        >
+                          {isSubmitting ? "Submitting..." : "Submit Resource"}
+                        </Button>
+                      </div>
+                    </form>
+                  )}
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
 
@@ -362,7 +716,7 @@ export default function ResourcesPage() {
       <SlidingFilterPanel
         isOpen={isFilterPanelOpen}
         onClose={() => setIsFilterPanelOpen(false)}
-        hierarchy={tagHierarchy}
+        hierarchy={tagHierarchy || {}}
         selectedTags={selectedTags}
         onTagToggle={toggleTag}
         onClearAll={clearAllFilters}
