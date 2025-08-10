@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     if (tags.length > 0) {
       // Query with tag filtering - simplified approach
       const resourcesWithTags = await sql`
-        SELECT DISTINCT r.id, r.submitted_by, r.date, r.title, r.description, 
+        SELECT r.id, r.submitted_by, r.date, r.title, r.description, r.author,
                r.url_link, r.download_link, r.linkedin_profile, r.created_at, r.updated_at
         FROM resources r
         INNER JOIN resource_tags rt ON r.id = rt.resource_id
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
     } else {
       // Query without tag filtering - simplified approach
       const allResources = await sql`
-        SELECT r.id, r.submitted_by, r.date, r.title, r.description, 
+        SELECT r.id, r.submitted_by, r.date, r.title, r.description, r.author,
                r.url_link, r.download_link, r.linkedin_profile, r.created_at, r.updated_at
         FROM resources r
       `
@@ -175,12 +175,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { submitted_by, date, title, description, url_link, download_link, linkedin_profile, tagIds } = body
+    const { submitted_by, date, title, description, author, url_link, download_link, linkedin_profile, tagIds } = body
 
     // Insert resource
     const [resource] = await sql`
-      INSERT INTO resources (submitted_by, date, title, description, url_link, download_link, linkedin_profile)
-      VALUES (${submitted_by}, ${date}, ${title}, ${description}, ${url_link}, ${download_link}, ${linkedin_profile})
+      INSERT INTO resources (submitted_by, date, title, description, author, url_link, download_link, linkedin_profile)
+      VALUES (${submitted_by}, ${date}, ${title}, ${description}, ${author}, ${url_link}, ${download_link}, ${linkedin_profile})
       RETURNING *
     `
 
