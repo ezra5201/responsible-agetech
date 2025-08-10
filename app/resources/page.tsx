@@ -34,6 +34,12 @@ export default function ResourcesPage() {
     fetchResources()
   }, [selectedTags, sortBy, sortOrder])
 
+  useEffect(() => {
+    // Set responsive default on mount
+    const isMobile = window.innerWidth < 768 // Tailwind's md breakpoint
+    setViewMode(isMobile ? "compact" : "list")
+  }, [])
+
   const fetchResources = async () => {
     try {
       setLoading(true)
