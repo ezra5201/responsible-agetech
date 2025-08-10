@@ -206,6 +206,7 @@ export default function AdminPage() {
       const data = {
         submitted_by: formData.get("submitted_by"),
         date: formData.get("date"),
+        author: formData.get("author"),
         title: formData.get("title"),
         description: formData.get("description"),
         url_link: formData.get("url_link"),
@@ -506,6 +507,16 @@ export default function AdminPage() {
                             <p className="text-xs text-gray-500 mt-1">This preserves the original submission date</p>
                           )}
                         </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="author">Author/s</Label>
+                        <Input
+                          id="author"
+                          name="author"
+                          defaultValue={editingResource?.author || ""}
+                          placeholder="Enter author name(s)"
+                        />
                       </div>
 
                       <div>
