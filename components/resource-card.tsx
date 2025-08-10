@@ -93,6 +93,11 @@ export function ResourceCard({ resource, showActions = false, onEdit, onDelete }
             Updated {formatDateTime(resource.updated_at)}
           </div>
         )}
+        {resource["author/s"] && (
+          <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+            <span>Author/s: {resource["author/s"]}</span>
+          </div>
+        )}
       </div>
 
       {resource.description && <p className={descriptionClasses}>{resource.description}</p>}
