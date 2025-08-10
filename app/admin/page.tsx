@@ -502,7 +502,15 @@ export default function AdminPage() {
                           <Label htmlFor="date">
                             {editingResource ? "Date Submitted (Original)" : "Date Submitted"}
                           </Label>
-                          <Input id="date" name="date" type="date" defaultValue={editingResource?.date} required />
+                          <Input
+                            id="date"
+                            name="date"
+                            type="date"
+                            defaultValue={
+                              editingResource?.date ? new Date(editingResource.date).toISOString().split("T")[0] : ""
+                            }
+                            required
+                          />
                           {editingResource && (
                             <p className="text-xs text-gray-500 mt-1">This preserves the original submission date</p>
                           )}
