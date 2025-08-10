@@ -21,7 +21,7 @@ export default function ResourcesPage() {
   const [error, setError] = useState<string | null>(null)
   const [tagHierarchy, setTagHierarchy] = useState<any>({})
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false)
-  const [viewMode, setViewMode] = useState<"cards" | "list">("cards")
+  const [viewMode, setViewMode] = useState<"cards" | "list">("list")
 
   useEffect(() => {
     fetchTags()
@@ -192,8 +192,8 @@ export default function ResourcesPage() {
                   {sortOrder === "asc" ? <SortAsc className="w-4 h-4" /> : <SortDesc className="w-4 h-4" />}
                 </button>
 
-                {/* View Toggle */}
-                <div className="flex border border-gray-300 rounded-md overflow-hidden">
+                {/* View Toggle - Hidden on mobile, shown on tablet and up */}
+                <div className="hidden md:flex border border-gray-300 rounded-md overflow-hidden">
                   <button
                     onClick={() => setViewMode("cards")}
                     className={`px-3 py-2 flex items-center gap-1 text-sm font-medium transition-colors ${
@@ -215,9 +215,33 @@ export default function ResourcesPage() {
                 </div>
 
                 {/* Mobile Filter Button */}
-                <Button variant="outline" onClick={() => setIsFilterPanelOpen(true)} className="sm:hidden">
+                <Button variant="outline" onClick={() => setIsFilterPanelOpen(true)} className="md:hidden">
                   <Filter className="w-4 h-4" />
                 </Button>
+              </div>
+            </div>
+
+            {/* Mobile View Toggle - Shown only on mobile */}
+            <div className="flex md:hidden mt-4 pt-4 border-t border-gray-200">
+              <div className="flex w-full border border-gray-300 rounded-md overflow-hidden">
+                <button
+                  onClick={() => setViewMode("cards")}
+                  className={`flex-1 px-3 py-2 flex items-center justify-center gap-1 text-sm font-medium transition-colors ${
+                    viewMode === "cards" ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  <Grid3X3 className="w-4 h-4" />
+                  Cards
+                </button>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`flex-1 px-3 py-2 flex items-center justify-center gap-1 text-sm font-medium transition-colors border-l border-gray-300 ${
+                    viewMode === "list" ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  <List className="w-4 h-4" />
+                  List
+                </button>
               </div>
             </div>
           </div>
@@ -248,7 +272,7 @@ export default function ResourcesPage() {
             <Button
               variant="outline"
               onClick={() => setIsFilterPanelOpen(true)}
-              className="hidden sm:flex items-center gap-2"
+              className="hidden md:flex items-center gap-2"
             >
               <Filter className="w-4 h-4" />
               Filter by Tags ({availableTagsCount} available)
