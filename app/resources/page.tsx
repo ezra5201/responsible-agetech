@@ -187,7 +187,7 @@ export default function ResourcesPage() {
   }
 
   const validateLinkedInUrl = (url: string) => {
-    if (!url) return true // Allow empty since it's required field validation will handle it
+    if (!url) return false // Now required, so empty is invalid
     return url.includes("https://www.linkedin.com/in/")
   }
 
@@ -208,7 +208,9 @@ export default function ResourcesPage() {
 
     // Validate LinkedIn URL on change
     if (name === "linkedin_profile") {
-      if (value && !validateLinkedInUrl(value)) {
+      if (!value) {
+        setLinkedinError("LinkedIn Profile URL is required")
+      } else if (!validateLinkedInUrl(value)) {
         setLinkedinError("LinkedIn URL must include 'https://www.linkedin.com/in/'")
       } else {
         setLinkedinError("")
@@ -530,7 +532,13 @@ export default function ResourcesPage() {
                       <div className="flex justify-end pt-6 border-t border-gray-200">
                         <Button
                           type="submit"
-                          disabled={isSubmitting || !!linkedinError || !!descriptionError || !isDescriptionValid}
+                          disabled={
+                            isSubmitting ||
+                            !!linkedinError ||
+                            !!descriptionError ||
+                            !isDescriptionValid ||
+                            !submitFormData.linkedin_profile.trim()
+                          }
                         >
                           {isSubmitting ? "Submitting..." : "Submit Resource"}
                         </Button>
