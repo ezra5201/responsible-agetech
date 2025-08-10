@@ -44,6 +44,7 @@ export default function AdminPage() {
   const [tagSuggestions, setTagSuggestions] = useState<TagSuggestion[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [suggestionError, setSuggestionError] = useState<string | null>(null)
+  const [statusFilter, setStatusFilter] = useState<string>("all")
 
   useEffect(() => {
     fetchResources()
@@ -65,7 +66,7 @@ export default function AdminPage() {
       setLoading(true)
       setError(null)
 
-      const response = await fetch("/api/resources")
+      const response = await fetch(`/api/resources?admin=true`)
 
       if (!response.ok) {
         const errorText = await response.text()
@@ -212,6 +213,7 @@ export default function AdminPage() {
         url_link: formData.get("url_link"),
         download_link: formData.get("download_link"),
         linkedin_profile: formData.get("linkedin_profile"),
+        review_notes: formData.get("review_notes"),
         tagIds: selectedTags,
       }
 
@@ -255,6 +257,48 @@ export default function AdminPage() {
     } catch (error) {
       console.error("Error deleting resource:", error)
       alert("Failed to delete resource. Please try again.")
+    }
+  }
+
+  const handleResourcePublish = async (id: number) => {
+    if (!confirm("Are you sure you want to publish this resource?")) return
+
+    try {
+      const response = await fetch(`/api/resources/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "published" }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+
+      fetchResources()
+    } catch (error) {
+      console.error("Error publishing resource:", error)
+      alert("Failed to publish resource. Please try again.")
+    }
+  }
+
+  const handleResourceReject = async (id: number) => {
+    if (!confirm("Are you sure you want to reject this resource?")) return
+
+    try {
+      const response = await fetch(`/api/resources/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "rejected" }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+
+      fetchResources()
+    } catch (error) {
+      console.error("Error rejecting resource:", error)
+      alert("Failed to reject resource. Please try again.")
     }
   }
 
@@ -339,6 +383,21 @@ export default function AdminPage() {
       }, 0)
     )
   }, 0)
+
+  // Filter resources based on status
+  const filteredResources = resources.filter((resource) => {
+    if (statusFilter === "all") return true
+    return resource.status === statusFilter
+  })
+
+  // Count resources by status
+  const statusCounts = {
+    all: resources.length,
+    pending_review: resources.filter((r) => r.status === "pending_review").length,
+    published: resources.filter((r) => r.status === "published").length,
+    rejected: resources.filter((r) => r.status === "rejected").length,
+    draft: resources.filter((r) => r.status === "draft").length,
+  }
 
   if (loading) {
     return (
@@ -575,6 +634,18 @@ export default function AdminPage() {
                         />
                         <p className="text-xs text-gray-500 mt-1">Leave blank if not applicable</p>
                       </div>
+                      <div>
+                        <Label htmlFor="review_notes">Review Notes (Admin Only)</Label>
+                        <Textarea
+                          id="review_notes"
+                          name="review_notes"
+                          defaultValue={editingResource?.review_notes || ""}
+                          rows={3}
+                          className="resize-none"
+                          placeholder="Add notes about this resource review..."
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Internal notes for admin use only</p>
+                      </div>
                     </div>
 
                     {/* Right Column - Tags (stacks below on mobile) */}
@@ -775,9 +846,45 @@ export default function AdminPage() {
           </div>
         </div>
 
+        {/* Status Filter Tabs */}
+        <div className="mb-6">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8">
+              {[
+                { key: "all", label: "All", count: statusCounts.all },
+                { key: "pending_review", label: "Pending Review", count: statusCounts.pending_review },
+                { key: "published", label: "Published", count: statusCounts.published },
+                { key: "rejected", label: "Rejected", count: statusCounts.rejected },
+                { key: "draft", label: "Draft", count: statusCounts.draft },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setStatusFilter(tab.key)}
+                  className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                    statusFilter === tab.key
+                      ? "border-blue-500 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  }`}
+                >
+                  {tab.label}
+                  {tab.count > 0 && (
+                    <span
+                      className={`ml-2 py-0.5 px-2 rounded-full text-xs ${
+                        statusFilter === tab.key ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </nav>
+          </div>
+        </div>
+
         {/* Resources Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {resources.map((resource) => (
+          {filteredResources.map((resource) => (
             <ResourceCard
               key={resource.id}
               resource={resource}
@@ -787,19 +894,29 @@ export default function AdminPage() {
                 setIsResourceDialogOpen(true)
               }}
               onDelete={handleResourceDelete}
+              onPublish={handleResourcePublish}
+              onReject={handleResourceReject}
             />
           ))}
         </div>
 
-        {resources.length === 0 && !loading && !error && (
+        {filteredResources.length === 0 && !loading && !error && (
           <div className="text-center py-12">
             <div className="bg-white rounded-lg shadow-sm border p-8">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Resources Yet</h3>
-              <p className="text-gray-500 mb-4">Get started by adding your first resource!</p>
-              <Button onClick={() => setIsResourceDialogOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Your First Resource
-              </Button>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {statusFilter === "all" ? "No Resources Yet" : `No ${statusFilter.replace("_", " ")} Resources`}
+              </h3>
+              <p className="text-gray-500 mb-4">
+                {statusFilter === "pending_review"
+                  ? "No resources are currently pending review."
+                  : "Get started by adding your first resource!"}
+              </p>
+              {statusFilter !== "pending_review" && (
+                <Button onClick={() => setIsResourceDialogOpen(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Your First Resource
+                </Button>
+              )}
             </div>
           </div>
         )}

@@ -9,9 +9,18 @@ interface ResourceCardProps {
   showActions?: boolean
   onEdit?: (resource: ResourceWithTags) => void
   onDelete?: (id: number) => void
+  onPublish?: (id: number) => void
+  onReject?: (id: number) => void
 }
 
-export function ResourceCard({ resource, showActions = false, onEdit, onDelete }: ResourceCardProps) {
+export function ResourceCard({
+  resource,
+  showActions = false,
+  onEdit,
+  onDelete,
+  onPublish,
+  onReject,
+}: ResourceCardProps) {
   const cardClasses = combineStyles(
     resourceStyles.card.background,
     resourceStyles.card.border,
@@ -63,9 +72,46 @@ export function ResourceCard({ resource, showActions = false, onEdit, onDelete }
   return (
     <div className={cardClasses}>
       <div className="flex justify-between items-start mb-3">
-        <h3 className={titleClasses}>{resource.title}</h3>
+        <div className="flex items-center gap-2">
+          <h3 className={titleClasses}>{resource.title}</h3>
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              resource.status === "published"
+                ? "bg-green-100 text-green-800"
+                : resource.status === "pending_review"
+                  ? "bg-yellow-100 text-yellow-800"
+                  : resource.status === "rejected"
+                    ? "bg-red-100 text-red-800"
+                    : "bg-gray-100 text-gray-800"
+            }`}
+          >
+            {resource.status === "pending_review"
+              ? "Pending Review"
+              : resource.status === "published"
+                ? "Published"
+                : resource.status === "rejected"
+                  ? "Rejected"
+                  : "Draft"}
+          </span>
+        </div>
         {showActions && (
           <div className="flex gap-2">
+            {resource.status === "pending_review" && (
+              <>
+                <button
+                  onClick={() => onPublish?.(resource.id)}
+                  className="text-green-600 hover:text-green-800 text-sm font-medium"
+                >
+                  Publish
+                </button>
+                <button
+                  onClick={() => onReject?.(resource.id)}
+                  className="text-red-600 hover:text-red-800 text-sm font-medium"
+                >
+                  Reject
+                </button>
+              </>
+            )}
             <button onClick={() => onEdit?.(resource)} className="text-blue-600 hover:text-blue-800 text-sm">
               Edit
             </button>
@@ -84,9 +130,15 @@ export function ResourceCard({ resource, showActions = false, onEdit, onDelete }
           </span>
           <span className="flex items-center gap-1">
             <Calendar className="w-3 h-3" />
-            {formatDate(resource.date)}
+            {resource.status === "published" ? "Published" : "Submitted"}: {formatDate(resource.date)}
           </span>
         </div>
+        {resource.submitted_at && resource.submitted_at !== resource.date && (
+          <div className="flex items-center gap-1 text-xs text-gray-400">
+            <Calendar className="w-3 h-3" />
+            Originally submitted: {formatDateTime(resource.submitted_at)}
+          </div>
+        )}
         {wasUpdated && (
           <div className="flex items-center gap-1 text-xs text-gray-400">
             <Clock className="w-3 h-3" />
