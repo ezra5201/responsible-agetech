@@ -25,15 +25,14 @@ export function ResourceSubmissionGuidelines({ onProceed }: ResourceSubmissionGu
 
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Header with gradient background */}
-      <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 rounded-t-lg">
-        <h2 className="text-2xl font-bold text-center mb-2">Thank You for Contributing!</h2>
-        <p className="text-center text-blue-100">
+      <div className="p-6">
+        <h2 className="text-3xl font-bold text-center mb-2 text-gray-900">Thank You for Contributing!</h2>
+        <p className="text-center text-gray-600">
           Help us build our global resource library for Responsible AgeTech 2025
         </p>
       </div>
 
-      <div className="bg-white p-6 rounded-b-lg space-y-6">
+      <div className="bg-white p-6 space-y-6">
         {/* Welcome Section */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 mb-3">

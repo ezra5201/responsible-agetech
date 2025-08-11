@@ -393,7 +393,7 @@ export default function ResourcesPage() {
                 </DialogTrigger>
                 <DialogContent className="max-w-4xl">
                   <DialogHeader>
-                    <DialogTitle>
+                    <DialogTitle className="text-3xl font-bold text-center text-gray-900">
                       {submissionStep === "guidelines" ? "Resource Submission Guidelines" : "Submit a Resource"}
                     </DialogTitle>
                   </DialogHeader>
