@@ -12,15 +12,9 @@ import { ActiveFiltersBar } from "@/components/active-filters-bar"
 import { resourceStyles } from "@/lib/styles"
 import { Search, SortAsc, SortDesc, Filter, Grid3X3, List, Smartphone, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { NewTagSelector } from "@/components/new-tag-selector"
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import type { TagHierarchy } from "@/lib/db"
-import { ResourceSubmissionGuidelines } from "@/components/resource-submission-guidelines"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { ChevronDown, ChevronRight } from "lucide-react"
+import { CardSubmissionFlow } from "@/components/card-submission-flow"
 
 export default function ResourcesPage() {
   const [resources, setResources] = useState<ResourceWithTags[]>([])
@@ -236,18 +230,14 @@ export default function ResourcesPage() {
     setSubmitSelectedTags((prev) => (checked ? [...prev, tagId] : prev.filter((id) => id !== tagId)))
   }
 
-  const handleSubmitResource = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    // Final validation check
-    if (submitFormData.submitter_linkedin && !validateLinkedInUrl(submitFormData.submitter_linkedin)) {
-      setLinkedinError("LinkedIn URL must include 'https://www.linkedin.com/in/'")
+  const handleCardSubmission = async (formData: any) => {
+    // Validation
+    if (formData.submitter_linkedin && !validateLinkedInUrl(formData.submitter_linkedin)) {
       return
     }
 
-    const descError = validateDescription(submitFormData.description)
+    const descError = validateDescription(formData.description)
     if (descError) {
-      setDescriptionError(descError)
       return
     }
 
@@ -257,29 +247,11 @@ export default function ResourcesPage() {
       const response = await fetch("/api/resources", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...submitFormData,
-          tagIds: submitSelectedTags,
-        }),
+        body: JSON.stringify(formData),
       })
 
       if (response.ok) {
         setIsSubmitted(true)
-        // Reset form
-        setSubmitFormData({
-          submitted_by: "",
-          date: new Date().toISOString().split("T")[0],
-          title: "",
-          description: "",
-          authors: "",
-          url: "",
-          download_link: "",
-          submitter_linkedin: "",
-          submitter_email: "",
-        })
-        setSubmitSelectedTags([])
-        setLinkedinError("")
-        setDescriptionError("")
       } else {
         console.error("Error submitting resource")
       }
@@ -416,15 +388,7 @@ export default function ResourcesPage() {
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-4xl bg-gray-50">
-                  <DialogHeader>
-                    <DialogTitle className="text-3xl font-bold text-center text-gray-900">
-                      {submissionStep === "guidelines" ? "Resource Submission Guidelines" : "Submit a Resource"}
-                    </DialogTitle>
-                  </DialogHeader>
-
-                  {submissionStep === "guidelines" ? (
-                    <ResourceSubmissionGuidelines onProceed={handleProceedToForm} />
-                  ) : isSubmitted ? (
+                  {isSubmitted ? (
                     <div className="text-center py-8">
                       <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -439,207 +403,12 @@ export default function ResourcesPage() {
                       <Button onClick={handleDialogClose}>Close</Button>
                     </div>
                   ) : (
-                    <form onSubmit={handleSubmitResource} className="space-y-6">
-                      {/* Resource Details Section */}
-                      <Collapsible open={resourceDetailsOpen} onOpenChange={handleResourceDetailsToggle}>
-                        <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                          <h3 className="text-lg font-semibold">Resource Details</h3>
-                          {resourceDetailsOpen ? (
-                            <ChevronDown className="h-5 w-5" />
-                          ) : (
-                            <ChevronRight className="h-5 w-5" />
-                          )}
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="space-y-6 pt-4">
-                          <div>
-                            <Label htmlFor="title" className="mb-2 block">
-                              Resource Title *
-                            </Label>
-                            <Input
-                              id="title"
-                              name="title"
-                              value={submitFormData.title}
-                              onChange={handleSubmitInputChange}
-                              required
-                            />
-                          </div>
-
-                          <div>
-                            <Label htmlFor="description" className="mb-2 block">
-                              Description *
-                            </Label>
-                            <Textarea
-                              id="description"
-                              name="description"
-                              value={submitFormData.description}
-                              onChange={handleSubmitInputChange}
-                              rows={4}
-                              required
-                              className={descriptionError ? "border-red-500" : ""}
-                            />
-                            {descriptionError && <p className="text-red-500 text-sm mt-1">{descriptionError}</p>}
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                              <Label htmlFor="authors" className="mb-2 block">
-                                Author(s)
-                              </Label>
-                              <Input
-                                id="authors"
-                                name="authors"
-                                value={submitFormData.authors}
-                                onChange={handleSubmitInputChange}
-                                placeholder="e.g., John Smith, Jane Doe"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="url" className="mb-2 block">
-                                URL Link
-                              </Label>
-                              <Input
-                                id="url"
-                                name="url"
-                                type="url"
-                                value={submitFormData.url}
-                                onChange={handleSubmitInputChange}
-                                placeholder="https://example.com"
-                              />
-                            </div>
-                          </div>
-
-                          <div>
-                            <Label htmlFor="download_link" className="mb-2 block">
-                              Download Link
-                            </Label>
-                            <Input
-                              id="download_link"
-                              name="download_link"
-                              type="url"
-                              value={submitFormData.download_link}
-                              onChange={handleSubmitInputChange}
-                              placeholder="https://example.com/download"
-                            />
-                          </div>
-                        </CollapsibleContent>
-                      </Collapsible>
-
-                      {/* Resource Tags Section */}
-                      <Collapsible open={resourceTagsOpen} onOpenChange={handleResourceTagsToggle}>
-                        <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                          <h3 className="text-lg font-semibold">Resource Tags</h3>
-                          {resourceTagsOpen ? (
-                            <ChevronDown className="h-5 w-5" />
-                          ) : (
-                            <ChevronRight className="h-5 w-5" />
-                          )}
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="pt-4">
-                          <div>
-                            <Label className="mb-2 block">Tags</Label>
-                            <p className="text-sm text-gray-600 mb-3">
-                              Select relevant tags to help others find your resource
-                            </p>
-                            {Object.keys(submitTagHierarchy).length > 0 ? (
-                              <NewTagSelector
-                                hierarchy={submitTagHierarchy}
-                                selectedTags={submitSelectedTags}
-                                onTagChange={handleSubmitTagChange}
-                                showAddTag={false}
-                              />
-                            ) : (
-                              <div className="text-sm text-gray-500">Loading tags...</div>
-                            )}
-                          </div>
-                        </CollapsibleContent>
-                      </Collapsible>
-
-                      {/* Submitter Details Section */}
-                      <Collapsible open={submitterDetailsOpen} onOpenChange={handleSubmitterDetailsToggle}>
-                        <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                          <h3 className="text-lg font-semibold">Submitter Details</h3>
-                          {submitterDetailsOpen ? (
-                            <ChevronDown className="h-5 w-5" />
-                          ) : (
-                            <ChevronRight className="h-5 w-5" />
-                          )}
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="space-y-6 pt-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                              <Label htmlFor="submitted_by" className="mb-2 block">
-                                Your Name *
-                              </Label>
-                              <Input
-                                id="submitted_by"
-                                name="submitted_by"
-                                value={submitFormData.submitted_by}
-                                onChange={handleSubmitInputChange}
-                                required
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="date" className="mb-2 block">
-                                Date
-                              </Label>
-                              <Input
-                                id="date"
-                                name="date"
-                                type="date"
-                                value={submitFormData.date}
-                                onChange={handleSubmitInputChange}
-                              />
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                              <Label htmlFor="submitter_email" className="mb-2 block">
-                                Submitter E-Mail *
-                              </Label>
-                              <Input
-                                id="submitter_email"
-                                name="submitter_email"
-                                type="email"
-                                value={submitFormData.submitter_email}
-                                onChange={handleSubmitInputChange}
-                                placeholder="your.email@example.com"
-                                required
-                              />
-                              <p className="text-sm text-gray-600 mt-1">Your email will not be publicly visible</p>
-                            </div>
-                            <div>
-                              <Label htmlFor="submitter_linkedin" className="mb-2 block">
-                                Submitter LinkedIn Profile
-                              </Label>
-                              <Input
-                                id="submitter_linkedin"
-                                name="submitter_linkedin"
-                                type="url"
-                                value={submitFormData.submitter_linkedin}
-                                onChange={handleSubmitInputChange}
-                                placeholder="https://linkedin.com/in/yourprofile"
-                              />
-                            </div>
-                          </div>
-                        </CollapsibleContent>
-                      </Collapsible>
-
-                      <div className="flex justify-end pt-6 border-t border-gray-200">
-                        <Button
-                          type="submit"
-                          disabled={
-                            isSubmitting ||
-                            !!linkedinError ||
-                            !!descriptionError ||
-                            !isDescriptionValid ||
-                            !submitFormData.submitter_linkedin.trim()
-                          }
-                        >
-                          {isSubmitting ? "Submitting..." : "Submit Resource"}
-                        </Button>
-                      </div>
-                    </form>
+                    <CardSubmissionFlow
+                      onSubmit={handleCardSubmission}
+                      onClose={handleDialogClose}
+                      tagHierarchy={submitTagHierarchy}
+                      isSubmitting={isSubmitting}
+                    />
                   )}
                 </DialogContent>
               </Dialog>
