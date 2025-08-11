@@ -530,7 +530,7 @@ export default function AdminPage() {
                   Add Resource
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-[95vw] max-h-[95vh] w-full overflow-auto">
                 <DialogHeader>
                   <DialogTitle>{editingResource ? "Edit Resource" : "Add New Resource"}</DialogTitle>
                   {editingResource && (
@@ -545,9 +545,9 @@ export default function AdminPage() {
 
                 <form action={handleResourceSubmit} className="space-y-6">
                   {/* Main Content Grid - Responsive Layout */}
-                  <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6">
                     {/* Left Column - Basic Info */}
-                    <div className="xl:col-span-3 space-y-4">
+                    <div className="lg:col-span-3 space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="submitted_by">Submitted By</Label>
@@ -664,7 +664,7 @@ export default function AdminPage() {
                     </div>
 
                     {/* Right Column - Tags (stacks below on mobile) */}
-                    <div className="xl:col-span-2 order-last xl:order-none">
+                    <div className="lg:col-span-2 order-last lg:order-none">
                       <div className="flex items-center justify-between mb-3">
                         <Label className="text-base font-medium">Tags</Label>
                         <div className="flex gap-2">
@@ -832,7 +832,7 @@ export default function AdminPage() {
                         </div>
                       )}
 
-                      <div className="max-h-[50vh] xl:max-h-[60vh] overflow-y-auto border rounded-md bg-gray-50 p-4">
+                      <div className="max-h-[40vh] lg:max-h-[50vh] overflow-y-auto border rounded-md bg-gray-50 p-4">
                         <ThreeLevelTagSelector
                           hierarchy={tagHierarchy}
                           selectedTags={selectedTags}

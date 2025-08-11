@@ -342,9 +342,9 @@ export default function ResourcesPage() {
       <div className="max-w-7xl mx-auto px-4">
         <div className="mb-8">
           {/* Header with Title and Icons */}
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
             <h1 className="text-3xl font-bold text-gray-900">Resources</h1>
-            <div className="flex gap-4">
+            <div className="flex gap-4 order-last sm:order-none">
               <button
                 onClick={handleSearchToggle}
                 className={`p-2 rounded-md transition-colors ${
