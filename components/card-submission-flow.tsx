@@ -195,7 +195,7 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
 
           {/* Card 2: Guidelines Confirmation - implemented with collapsible checkboxes */}
           <div className="w-full flex-shrink-0 px-4">
-            <div className="space-y-4">
+            <div className="space-y-2">
               <Collapsible open={guidelinesOpen} onOpenChange={setGuidelinesOpen}>
                 <CollapsibleTrigger className="w-full">
                   <div className="flex items-center justify-between gap-2 p-3 bg-amber-50 rounded-lg border border-amber-200">
@@ -209,7 +209,7 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
                   </div>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  <div className="space-y-3 mt-4">
+                  <div className="space-y-1 mt-2">
                     {[
                       {
                         key: "noCommercial" as keyof typeof guidelinesConfirmed,
@@ -237,7 +237,7 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
                         description: "Content shared without proper permissions or attribution",
                       },
                     ].map((item) => (
-                      <div key={item.key} className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg">
+                      <div key={item.key} className="flex items-start gap-3 p-2 border border-gray-200 rounded-lg">
                         <input
                           type="checkbox"
                           id={item.key}
@@ -249,7 +249,7 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
                           <label htmlFor={item.key} className="font-medium text-gray-900 cursor-pointer">
                             {item.title}
                           </label>
-                          <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                          <p className="text-sm text-gray-600 mt-0.5">{item.description}</p>
                         </div>
                       </div>
                     ))}
@@ -262,9 +262,9 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
 
           {/* Card 3: Resource Details - implemented with title, description, authors */}
           <div className="w-full flex-shrink-0 px-4">
-            <div className="space-y-4">
+            <div className="space-y-2">
               <div>
-                <Label htmlFor="title" className="mb-2 block">
+                <Label htmlFor="title" className="mb-1 block">
                   Resource Title *
                 </Label>
                 <Input
@@ -278,7 +278,7 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
               </div>
 
               <div>
-                <Label htmlFor="description" className="mb-2 block">
+                <Label htmlFor="description" className="mb-1 block">
                   Description *
                 </Label>
                 <Textarea
@@ -293,7 +293,7 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
               </div>
 
               <div>
-                <Label htmlFor="authors" className="mb-2 block">
+                <Label htmlFor="authors" className="mb-1 block">
                   Author(s)
                 </Label>
                 <Input
@@ -309,9 +309,9 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
 
           {/* Card 4: Resource Links - implemented with URL and download links */}
           <div className="w-full flex-shrink-0 px-4">
-            <div className="space-y-4">
+            <div className="space-y-2">
               <div>
-                <Label htmlFor="url" className="mb-2 block">
+                <Label htmlFor="url" className="mb-1 block">
                   URL Link
                 </Label>
                 <Input
@@ -322,11 +322,11 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
                   onChange={handleInputChange}
                   placeholder="https://example.com"
                 />
-                <p className="text-sm text-gray-600 mt-1">Link to the main resource (website, article, etc.)</p>
+                <p className="text-sm text-gray-600 mt-0.5">Link to the main resource (website, article, etc.)</p>
               </div>
 
               <div>
-                <Label htmlFor="download_link" className="mb-2 block">
+                <Label htmlFor="download_link" className="mb-1 block">
                   Download Link
                 </Label>
                 <Input
@@ -337,10 +337,10 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
                   onChange={handleInputChange}
                   placeholder="https://example.com/download"
                 />
-                <p className="text-sm text-gray-600 mt-1">Direct download link if applicable (PDF, document, etc.)</p>
+                <p className="text-sm text-gray-600 mt-0.5">Direct download link if applicable (PDF, document, etc.)</p>
               </div>
 
-              <div className="bg-blue-50 rounded-lg p-4">
+              <div className="bg-blue-50 rounded-lg p-3">
                 <p className="text-sm text-gray-700">
                   <strong>Note:</strong> Both links are optional, but providing at least one helps users access your
                   resource.
@@ -351,10 +351,10 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
 
           {/* Card 5: Resource Tags - implemented with tag selector */}
           <div className="w-full flex-shrink-0 px-4">
-            <div className="space-y-4">
+            <div className="space-y-2">
               <div>
-                <Label className="mb-2 block">Tags</Label>
-                <p className="text-sm text-gray-600 mb-3">Select relevant tags to help others find your resource</p>
+                <Label className="mb-1 block">Tags</Label>
+                <p className="text-sm text-gray-600 mb-2">Select relevant tags to help others find your resource</p>
                 {Object.keys(tagHierarchy).length > 0 ? (
                   <NewTagSelector
                     hierarchy={tagHierarchy}
@@ -371,10 +371,10 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
 
           {/* Card 6: Submitter Details - implemented with name, date, email, LinkedIn */}
           <div className="w-full flex-shrink-0 px-4">
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <div>
-                  <Label htmlFor="submitted_by" className="mb-2 block">
+                  <Label htmlFor="submitted_by" className="mb-1 block">
                     Your Name *
                   </Label>
                   <Input
@@ -387,7 +387,7 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
                   />
                 </div>
                 <div>
-                  <Label htmlFor="date" className="mb-2 block">
+                  <Label htmlFor="date" className="mb-1 block">
                     Date
                   </Label>
                   <Input id="date" name="date" type="date" value={formData.date} onChange={handleInputChange} />
@@ -395,7 +395,7 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
               </div>
 
               <div>
-                <Label htmlFor="submitter_email" className="mb-2 block">
+                <Label htmlFor="submitter_email" className="mb-1 block">
                   Submitter E-Mail *
                 </Label>
                 <Input
@@ -407,11 +407,11 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
                   placeholder="your.email@example.com"
                   required
                 />
-                <p className="text-sm text-gray-600 mt-1">Your email will not be publicly visible</p>
+                <p className="text-sm text-gray-600 mt-0.5">Your email will not be publicly visible</p>
               </div>
 
               <div>
-                <Label htmlFor="submitter_linkedin" className="mb-2 block">
+                <Label htmlFor="submitter_linkedin" className="mb-1 block">
                   LinkedIn Profile
                 </Label>
                 <Input
@@ -428,10 +428,10 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
 
           {/* Card 7: Review & Submit - implemented with summary of entered data */}
           <div className="w-full flex-shrink-0 px-4">
-            <div className="space-y-4">
-              <div className="bg-white rounded-lg p-4 border border-gray-200">
-                <h4 className="font-semibold text-gray-900 mb-3">Review Your Submission</h4>
-                <div className="space-y-2 text-sm">
+            <div className="space-y-2">
+              <div className="bg-white rounded-lg p-3 border border-gray-200">
+                <h4 className="font-semibold text-gray-900 mb-2">Review Your Submission</h4>
+                <div className="space-y-1 text-sm">
                   <div>
                     <strong>Title:</strong> {formData.title || "Not provided"}
                   </div>
@@ -462,7 +462,7 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
                   </div>
                 </div>
               </div>
-              <div className="bg-green-50 rounded-lg p-4">
+              <div className="bg-green-50 rounded-lg p-3">
                 <p className="text-sm text-gray-700">
                   <strong>Ready to submit!</strong> Your resource will be reviewed before being published to the public
                   library.
