@@ -105,15 +105,6 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
     })
   }
 
-  const ProgressBar = () => (
-    <div className="w-full bg-gray-200 rounded-full h-2 mb-6">
-      <div
-        className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-in-out"
-        style={{ width: `${(currentCard / totalCards) * 100}%` }}
-      />
-    </div>
-  )
-
   const CardHeader = () => (
     <div className="text-center mb-6">
       <h2 className="text-2xl font-bold text-gray-900 mb-2">{cardTitles[currentCard - 1]}</h2>
@@ -154,7 +145,6 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
 
   return (
     <div className="max-w-2xl mx-auto bg-gray-50 rounded-lg p-6" style={{ maxHeight: "600px", overflow: "hidden" }}>
-      <ProgressBar />
       <CardHeader />
 
       <div className="relative overflow-hidden" style={{ minHeight: "400px" }}>
