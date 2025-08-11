@@ -24,7 +24,7 @@ export function ResourceSubmissionGuidelines({ onProceed }: ResourceSubmissionGu
   const allConfirmed = Object.values(confirmations).every(Boolean)
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto bg-gray-50 rounded-lg">
       <div className="p-6">
         <h2 className="text-3xl font-bold text-center mb-2 text-gray-900">Thank You for Contributing!</h2>
         <p className="text-center text-gray-600">
