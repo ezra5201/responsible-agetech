@@ -90,7 +90,29 @@ export default function SubmitResourcePage() {
             <p className="text-gray-600 mb-6">
               Your resource is now under review. We'll review it and publish it to the public library once approved.
             </p>
-            <Button onClick={() => (window.location.href = "/")}>Return to Home</Button>
+            <div className="flex gap-4 justify-center">
+              <Button onClick={() => (window.location.href = "/resources")}>View Resources</Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsSubmitted(false)
+                  setFormData({
+                    submitted_by: "",
+                    date: new Date().toISOString().split("T")[0],
+                    title: "",
+                    description: "",
+                    author: "",
+                    url_link: "",
+                    download_link: "",
+                    linkedin_profile: "",
+                    submitter_email: "",
+                  })
+                  setSelectedTags([])
+                }}
+              >
+                Submit Another Resource
+              </Button>
+            </div>
           </div>
         </div>
       </div>
