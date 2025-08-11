@@ -46,6 +46,8 @@ export interface TagTag {
   updated_at: string
 }
 
+export type Tag = TagTag
+
 export interface CompleteTagHierarchy {
   category_id: number
   category_name: string
