@@ -302,6 +302,30 @@ export default function ResourcesPage() {
     setSubmissionStep("form")
   }
 
+  const handleResourceDetailsToggle = (open: boolean) => {
+    setResourceDetailsOpen(open)
+    if (open) {
+      setResourceTagsOpen(false)
+      setSubmitterDetailsOpen(false)
+    }
+  }
+
+  const handleResourceTagsToggle = (open: boolean) => {
+    setResourceTagsOpen(open)
+    if (open) {
+      setResourceDetailsOpen(false)
+      setSubmitterDetailsOpen(false)
+    }
+  }
+
+  const handleSubmitterDetailsToggle = (open: boolean) => {
+    setSubmitterDetailsOpen(open)
+    if (open) {
+      setResourceDetailsOpen(false)
+      setResourceTagsOpen(false)
+    }
+  }
+
   // Count available tags for display
   const availableTagsCount = Object.values(tagHierarchy || {}).reduce((total, category: any) => {
     if (!category || !category.subcategories) return total
@@ -417,7 +441,7 @@ export default function ResourcesPage() {
                   ) : (
                     <form onSubmit={handleSubmitResource} className="space-y-6">
                       {/* Resource Details Section */}
-                      <Collapsible open={resourceDetailsOpen} onOpenChange={setResourceDetailsOpen}>
+                      <Collapsible open={resourceDetailsOpen} onOpenChange={handleResourceDetailsToggle}>
                         <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                           <h3 className="text-lg font-semibold">Resource Details</h3>
                           {resourceDetailsOpen ? (
@@ -501,7 +525,7 @@ export default function ResourcesPage() {
                       </Collapsible>
 
                       {/* Resource Tags Section */}
-                      <Collapsible open={resourceTagsOpen} onOpenChange={setResourceTagsOpen}>
+                      <Collapsible open={resourceTagsOpen} onOpenChange={handleResourceTagsToggle}>
                         <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                           <h3 className="text-lg font-semibold">Resource Tags</h3>
                           {resourceTagsOpen ? (
@@ -531,7 +555,7 @@ export default function ResourcesPage() {
                       </Collapsible>
 
                       {/* Submitter Details Section */}
-                      <Collapsible open={submitterDetailsOpen} onOpenChange={setSubmitterDetailsOpen}>
+                      <Collapsible open={submitterDetailsOpen} onOpenChange={handleSubmitterDetailsToggle}>
                         <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                           <h3 className="text-lg font-semibold">Submitter Details</h3>
                           {submitterDetailsOpen ? (
