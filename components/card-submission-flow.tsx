@@ -7,9 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { NewTagSelector } from "@/components/new-tag-selector"
-import { ChevronLeft, ChevronRight, ChevronDown, Check, AlertTriangle } from "lucide-react"
+import { ChevronLeft, ChevronRight, Check } from "lucide-react"
 
 interface CardSubmissionFlowProps {
   onSubmit: (data: any) => void
@@ -186,66 +185,55 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
           {/* Card 2: Guidelines Confirmation - implemented with collapsible checkboxes */}
           <div className="w-full flex-shrink-0 px-4">
             <div className="space-y-2">
-              <Collapsible open={guidelinesOpen} onOpenChange={setGuidelinesOpen}>
-                <CollapsibleTrigger className="w-full">
-                  <div className="flex items-center justify-between gap-2 p-3 bg-amber-50 rounded-lg border border-amber-200">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="w-5 h-5 text-amber-600" />
-                      <span className="font-medium text-gray-900">Please Confirm Your Resource Does NOT Include:</span>
-                    </div>
-                    <ChevronDown
-                      className={`w-5 h-5 text-gray-500 transition-transform ${guidelinesOpen ? "rotate-180" : ""}`}
+              <div className="text-center mb-3">
+                <h3 className="text-lg font-semibold text-gray-900">Please Confirm Your Resource Does NOT Include:</h3>
+              </div>
+
+              <div className="space-y-1">
+                {[
+                  {
+                    key: "noCommercial" as keyof typeof guidelinesConfirmed,
+                    title: "Commercial offers or product sales",
+                    description: "No promotional content, pricing pages, or direct sales materials",
+                  },
+                  {
+                    key: "noOffensive" as keyof typeof guidelinesConfirmed,
+                    title: "Offensive or discriminatory content",
+                    description: "Content that targets or demeans any group based on age, race, gender, or ability",
+                  },
+                  {
+                    key: "noMedical" as keyof typeof guidelinesConfirmed,
+                    title: "Unverified medical advice",
+                    description: "Personal medical recommendations without proper credentials or peer review",
+                  },
+                  {
+                    key: "noSpam" as keyof typeof guidelinesConfirmed,
+                    title: "Spam or low-quality content",
+                    description: "Duplicate submissions, irrelevant links, or content unrelated to AgeTech/AI",
+                  },
+                  {
+                    key: "noCopyright" as keyof typeof guidelinesConfirmed,
+                    title: "Copyright violations",
+                    description: "Content shared without proper permissions or attribution",
+                  },
+                ].map((item) => (
+                  <div key={item.key} className="flex items-start gap-3 p-2 border border-gray-200 rounded-lg">
+                    <input
+                      type="checkbox"
+                      id={item.key}
+                      checked={guidelinesConfirmed[item.key]}
+                      onChange={() => handleGuidelineChange(item.key)}
+                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     />
+                    <div className="flex-1">
+                      <label htmlFor={item.key} className="font-medium text-gray-900 cursor-pointer">
+                        {item.title}
+                      </label>
+                      <p className="text-sm text-gray-600 mt-0.5">{item.description}</p>
+                    </div>
                   </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="space-y-1 mt-2">
-                    {[
-                      {
-                        key: "noCommercial" as keyof typeof guidelinesConfirmed,
-                        title: "Commercial offers or product sales",
-                        description: "No promotional content, pricing pages, or direct sales materials",
-                      },
-                      {
-                        key: "noOffensive" as keyof typeof guidelinesConfirmed,
-                        title: "Offensive or discriminatory content",
-                        description: "Content that targets or demeans any group based on age, race, gender, or ability",
-                      },
-                      {
-                        key: "noMedical" as keyof typeof guidelinesConfirmed,
-                        title: "Unverified medical advice",
-                        description: "Personal medical recommendations without proper credentials or peer review",
-                      },
-                      {
-                        key: "noSpam" as keyof typeof guidelinesConfirmed,
-                        title: "Spam or low-quality content",
-                        description: "Duplicate submissions, irrelevant links, or content unrelated to AgeTech/AI",
-                      },
-                      {
-                        key: "noCopyright" as keyof typeof guidelinesConfirmed,
-                        title: "Copyright violations",
-                        description: "Content shared without proper permissions or attribution",
-                      },
-                    ].map((item) => (
-                      <div key={item.key} className="flex items-start gap-3 p-2 border border-gray-200 rounded-lg">
-                        <input
-                          type="checkbox"
-                          id={item.key}
-                          checked={guidelinesConfirmed[item.key]}
-                          onChange={() => handleGuidelineChange(item.key)}
-                          className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                        />
-                        <div className="flex-1">
-                          <label htmlFor={item.key} className="font-medium text-gray-900 cursor-pointer">
-                            {item.title}
-                          </label>
-                          <p className="text-sm text-gray-600 mt-0.5">{item.description}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
+                ))}
+              </div>
               <p className="text-sm text-gray-600 text-center">All boxes must be checked to proceed to the next step</p>
             </div>
           </div>
