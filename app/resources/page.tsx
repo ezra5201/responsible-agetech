@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { NewTagSelector } from "@/components/new-tag-selector"
 import type { TagHierarchy } from "@/lib/db"
+import { ResourceSubmissionGuidelines } from "@/components/resource-submission-guidelines"
 
 export default function ResourcesPage() {
   const [resources, setResources] = useState<ResourceWithTags[]>([])
@@ -51,6 +52,7 @@ export default function ResourcesPage() {
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [linkedinError, setLinkedinError] = useState("")
   const [descriptionError, setDescriptionError] = useState("")
+  const [submissionStep, setSubmissionStep] = useState<"guidelines" | "form">("guidelines")
 
   useEffect(() => {
     fetchTags()
@@ -288,6 +290,11 @@ export default function ResourcesPage() {
     setIsSubmitted(false)
     setLinkedinError("")
     setDescriptionError("")
+    setSubmissionStep("guidelines")
+  }
+
+  const handleProceedToForm = () => {
+    setSubmissionStep("form")
   }
 
   // Count available tags for display
@@ -381,10 +388,14 @@ export default function ResourcesPage() {
                 </DialogTrigger>
                 <DialogContent className="max-w-4xl">
                   <DialogHeader>
-                    <DialogTitle>Submit a Resource</DialogTitle>
+                    <DialogTitle>
+                      {submissionStep === "guidelines" ? "Resource Submission Guidelines" : "Submit a Resource"}
+                    </DialogTitle>
                   </DialogHeader>
 
-                  {isSubmitted ? (
+                  {submissionStep === "guidelines" ? (
+                    <ResourceSubmissionGuidelines onProceed={handleProceedToForm} />
+                  ) : isSubmitted ? (
                     <div className="text-center py-8">
                       <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
