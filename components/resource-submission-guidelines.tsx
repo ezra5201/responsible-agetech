@@ -25,7 +25,7 @@ export function ResourceSubmissionGuidelines({ onProceed }: ResourceSubmissionGu
 
   return (
     <div className="max-w-2xl mx-auto bg-gray-50 rounded-lg">
-      <div className="p-6">
+      <div className="pt-2 pb-4 px-6">
         <p className="text-center text-gray-600">Help build our global resource library for Responsible AgeTech</p>
       </div>
 
