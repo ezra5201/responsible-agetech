@@ -2,7 +2,8 @@
 
 import React from "react"
 import { Button } from "@/components/ui/button"
-import { Check, AlertTriangle, Globe } from "lucide-react"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Check, AlertTriangle, Globe, ChevronDown } from "lucide-react"
 
 interface ResourceSubmissionGuidelinesProps {
   onProceed: () => void
@@ -17,8 +18,25 @@ export function ResourceSubmissionGuidelines({ onProceed }: ResourceSubmissionGu
     noCopyright: false,
   })
 
+  const [welcomeOpen, setWelcomeOpen] = React.useState(true)
+  const [confirmOpen, setConfirmOpen] = React.useState(false)
+
   const handleConfirmationChange = (key: keyof typeof confirmations) => {
     setConfirmations((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  const toggleWelcome = () => {
+    if (!welcomeOpen) {
+      setWelcomeOpen(true)
+      setConfirmOpen(false)
+    }
+  }
+
+  const toggleConfirm = () => {
+    if (!confirmOpen) {
+      setConfirmOpen(true)
+      setWelcomeOpen(false)
+    }
   }
 
   const allConfirmed = Object.values(confirmations).every(Boolean)
@@ -30,126 +48,140 @@ export function ResourceSubmissionGuidelines({ onProceed }: ResourceSubmissionGu
       </div>
 
       <div className="bg-white p-6 space-y-6">
-        {/* Welcome Section */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Globe className="w-5 h-5 text-green-600" />
-            <h3 className="text-lg font-semibold text-gray-900">We Welcome Resources That Are:</h3>
-          </div>
-
-          <div className="bg-green-50 rounded-lg p-4 space-y-2">
-            {[
-              "In any language",
-              "Any media type (articles, videos, podcasts, tools)",
-              "Research, case studies, or practical guides",
-              "Educational or informational content",
-              "Open source tools and frameworks",
-            ].map((item, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
-                <span className="text-gray-700">{item}</span>
+        <Collapsible open={welcomeOpen} onOpenChange={toggleWelcome}>
+          <CollapsibleTrigger className="w-full">
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2">
+                <Globe className="w-5 h-5 text-green-600" />
+                <h3 className="text-lg font-semibold text-gray-900">We Welcome Resources That Are:</h3>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Confirmation Section */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle className="w-5 h-5 text-amber-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Please Confirm Your Resource Does NOT Include:</h3>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg">
-              <input
-                type="checkbox"
-                id="noCommercial"
-                checked={confirmations.noCommercial}
-                onChange={() => handleConfirmationChange("noCommercial")}
-                className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              <ChevronDown
+                className={`w-5 h-5 text-gray-500 transition-transform ${welcomeOpen ? "rotate-180" : ""}`}
               />
-              <div className="flex-1">
-                <label htmlFor="noCommercial" className="font-medium text-gray-900 cursor-pointer">
-                  Commercial offers or product sales
-                </label>
-                <p className="text-sm text-gray-600 mt-1">
-                  No promotional content, pricing pages, or direct sales materials
-                </p>
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="bg-green-50 rounded-lg p-4 space-y-2">
+              {[
+                "In any language",
+                "Any media type (articles, videos, podcasts, tools)",
+                "Research, case studies, or practical guides",
+                "Educational or informational content",
+                "Open source tools and frameworks",
+              ].map((item, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
+                  <span className="text-gray-700">{item}</span>
+                </div>
+              ))}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+
+        <Collapsible open={confirmOpen} onOpenChange={toggleConfirm}>
+          <CollapsibleTrigger className="w-full">
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+                <h3 className="text-lg font-semibold text-gray-900">Please Confirm Your Resource Does NOT Include:</h3>
+              </div>
+              <ChevronDown
+                className={`w-5 h-5 text-gray-500 transition-transform ${confirmOpen ? "rotate-180" : ""}`}
+              />
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg">
+                <input
+                  type="checkbox"
+                  id="noCommercial"
+                  checked={confirmations.noCommercial}
+                  onChange={() => handleConfirmationChange("noCommercial")}
+                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <div className="flex-1">
+                  <label htmlFor="noCommercial" className="font-medium text-gray-900 cursor-pointer">
+                    Commercial offers or product sales
+                  </label>
+                  <p className="text-sm text-gray-600 mt-1">
+                    No promotional content, pricing pages, or direct sales materials
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg">
+                <input
+                  type="checkbox"
+                  id="noOffensive"
+                  checked={confirmations.noOffensive}
+                  onChange={() => handleConfirmationChange("noOffensive")}
+                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <div className="flex-1">
+                  <label htmlFor="noOffensive" className="font-medium text-gray-900 cursor-pointer">
+                    Offensive or discriminatory content
+                  </label>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Content that targets or demeans any group based on age, race, gender, or ability
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg">
+                <input
+                  type="checkbox"
+                  id="noMedical"
+                  checked={confirmations.noMedical}
+                  onChange={() => handleConfirmationChange("noMedical")}
+                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <div className="flex-1">
+                  <label htmlFor="noMedical" className="font-medium text-gray-900 cursor-pointer">
+                    Unverified medical advice
+                  </label>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Personal medical recommendations without proper credentials or peer review
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg">
+                <input
+                  type="checkbox"
+                  id="noSpam"
+                  checked={confirmations.noSpam}
+                  onChange={() => handleConfirmationChange("noSpam")}
+                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <div className="flex-1">
+                  <label htmlFor="noSpam" className="font-medium text-gray-900 cursor-pointer">
+                    Spam or low-quality content
+                  </label>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Duplicate submissions, irrelevant links, or content unrelated to AgeTech/AI
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg">
+                <input
+                  type="checkbox"
+                  id="noCopyright"
+                  checked={confirmations.noCopyright}
+                  onChange={() => handleConfirmationChange("noCopyright")}
+                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <div className="flex-1">
+                  <label htmlFor="noCopyright" className="font-medium text-gray-900 cursor-pointer">
+                    Copyright violations
+                  </label>
+                  <p className="text-sm text-gray-600 mt-1">Content shared without proper permissions or attribution</p>
+                </div>
               </div>
             </div>
-
-            <div className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg">
-              <input
-                type="checkbox"
-                id="noOffensive"
-                checked={confirmations.noOffensive}
-                onChange={() => handleConfirmationChange("noOffensive")}
-                className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <div className="flex-1">
-                <label htmlFor="noOffensive" className="font-medium text-gray-900 cursor-pointer">
-                  Offensive or discriminatory content
-                </label>
-                <p className="text-sm text-gray-600 mt-1">
-                  Content that targets or demeans any group based on age, race, gender, or ability
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg">
-              <input
-                type="checkbox"
-                id="noMedical"
-                checked={confirmations.noMedical}
-                onChange={() => handleConfirmationChange("noMedical")}
-                className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <div className="flex-1">
-                <label htmlFor="noMedical" className="font-medium text-gray-900 cursor-pointer">
-                  Unverified medical advice
-                </label>
-                <p className="text-sm text-gray-600 mt-1">
-                  Personal medical recommendations without proper credentials or peer review
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg">
-              <input
-                type="checkbox"
-                id="noSpam"
-                checked={confirmations.noSpam}
-                onChange={() => handleConfirmationChange("noSpam")}
-                className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <div className="flex-1">
-                <label htmlFor="noSpam" className="font-medium text-gray-900 cursor-pointer">
-                  Spam or low-quality content
-                </label>
-                <p className="text-sm text-gray-600 mt-1">
-                  Duplicate submissions, irrelevant links, or content unrelated to AgeTech/AI
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg">
-              <input
-                type="checkbox"
-                id="noCopyright"
-                checked={confirmations.noCopyright}
-                onChange={() => handleConfirmationChange("noCopyright")}
-                className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <div className="flex-1">
-                <label htmlFor="noCopyright" className="font-medium text-gray-900 cursor-pointer">
-                  Copyright violations
-                </label>
-                <p className="text-sm text-gray-600 mt-1">Content shared without proper permissions or attribution</p>
-              </div>
-            </div>
-          </div>
-        </div>
+          </CollapsibleContent>
+        </Collapsible>
 
         {/* Footer */}
         <div className="pt-4 border-t border-gray-200">
