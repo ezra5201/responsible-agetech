@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -78,9 +77,11 @@ export default function SubmitResourcePage() {
     }
   }
 
+  console.log("showOpeningScreen:", showOpeningScreen)
+
   if (showOpeningScreen) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12">
+      <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-2xl mx-auto px-4">
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
             {/* Header with gradient background */}
