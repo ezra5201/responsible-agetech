@@ -24,7 +24,7 @@ export function ResourceSubmissionGuidelines({ onProceed }: ResourceSubmissionGu
   const allConfirmed = Object.values(confirmations).every(Boolean)
 
   return (
-    <div className="max-w-2xl mx-auto bg-gray-50 rounded-lg">
+    <div className="max-w-2xl mx-auto bg-gray-50 rounded-lg relative pb-20">
       <div className="p-6">
         <h2 className="text-3xl font-bold text-center mb-2 text-gray-900">Thank You for Contributing!</h2>
         <p className="text-center text-gray-600">
@@ -157,11 +157,15 @@ export function ResourceSubmissionGuidelines({ onProceed }: ResourceSubmissionGu
         {/* Footer */}
         <div className="pt-4 border-t border-gray-200">
           <p className="text-sm text-gray-600 text-center mb-4">All boxes must be checked to proceed with submission</p>
-          <div className="flex justify-center">
-            <Button onClick={onProceed} disabled={!allConfirmed} className="px-8 py-2">
-              Proceed to Resource Submission
-            </Button>
-          </div>
+        </div>
+      </div>
+
+      {/* Sticky Button Container */}
+      <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 rounded-b-lg">
+        <div className="flex justify-center">
+          <Button onClick={onProceed} disabled={!allConfirmed} className="px-8 py-2">
+            Proceed to Resource Submission
+          </Button>
         </div>
       </div>
     </div>
