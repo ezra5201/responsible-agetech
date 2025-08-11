@@ -42,10 +42,10 @@ export default function ResourcesPage() {
     date: new Date().toISOString().split("T")[0],
     title: "",
     description: "",
-    author: "",
-    url_link: "",
+    authors: "",
+    url: "",
     download_link: "",
-    linkedin_profile: "",
+    submitter_linkedin: "",
     submitter_email: "",
   })
   const [submitSelectedTags, setSubmitSelectedTags] = useState<number[]>([])
@@ -56,8 +56,8 @@ export default function ResourcesPage() {
   const [descriptionError, setDescriptionError] = useState("")
   const [submissionStep, setSubmissionStep] = useState<"guidelines" | "form">("guidelines")
   const [resourceDetailsOpen, setResourceDetailsOpen] = useState(true)
-  const [resourceTagsOpen, setResourceTagsOpen] = useState(true)
-  const [submitterDetailsOpen, setSubmitterDetailsOpen] = useState(true)
+  const [resourceTagsOpen, setResourceTagsOpen] = useState(false)
+  const [submitterDetailsOpen, setSubmitterDetailsOpen] = useState(false)
 
   useEffect(() => {
     fetchTags()
@@ -215,7 +215,7 @@ export default function ResourcesPage() {
     setSubmitFormData((prev) => ({ ...prev, [name]: value }))
 
     // Validate LinkedIn URL on change
-    if (name === "linkedin_profile") {
+    if (name === "submitter_linkedin") {
       if (!value) {
         setLinkedinError("LinkedIn Profile URL is required")
       } else if (!validateLinkedInUrl(value)) {
@@ -240,7 +240,7 @@ export default function ResourcesPage() {
     e.preventDefault()
 
     // Final validation check
-    if (submitFormData.linkedin_profile && !validateLinkedInUrl(submitFormData.linkedin_profile)) {
+    if (submitFormData.submitter_linkedin && !validateLinkedInUrl(submitFormData.submitter_linkedin)) {
       setLinkedinError("LinkedIn URL must include 'https://www.linkedin.com/in/'")
       return
     }
@@ -271,10 +271,10 @@ export default function ResourcesPage() {
           date: new Date().toISOString().split("T")[0],
           title: "",
           description: "",
-          author: "",
-          url_link: "",
+          authors: "",
+          url: "",
           download_link: "",
-          linkedin_profile: "",
+          submitter_linkedin: "",
           submitter_email: "",
         })
         setSubmitSelectedTags([])
@@ -428,7 +428,9 @@ export default function ResourcesPage() {
                         </CollapsibleTrigger>
                         <CollapsibleContent className="space-y-6 pt-4">
                           <div>
-                            <Label htmlFor="title">Resource Title *</Label>
+                            <Label htmlFor="title" className="mb-2 block">
+                              Resource Title *
+                            </Label>
                             <Input
                               id="title"
                               name="title"
@@ -439,7 +441,9 @@ export default function ResourcesPage() {
                           </div>
 
                           <div>
-                            <Label htmlFor="description">Description *</Label>
+                            <Label htmlFor="description" className="mb-2 block">
+                              Description *
+                            </Label>
                             <Textarea
                               id="description"
                               name="description"
@@ -448,60 +452,50 @@ export default function ResourcesPage() {
                               rows={4}
                               required
                               className={descriptionError ? "border-red-500" : ""}
-                              maxLength={600}
                             />
-                            <div className="flex justify-between items-center mt-1">
-                              <div>
-                                {descriptionError && <p className="text-red-500 text-sm">{descriptionError}</p>}
-                              </div>
-                              <p
-                                className={`text-sm ${
-                                  descriptionLength < 100
-                                    ? "text-red-500"
-                                    : descriptionLength > 600
-                                      ? "text-red-500"
-                                      : "text-gray-500"
-                                }`}
-                              >
-                                {descriptionLength}/600 characters (minimum 100)
-                              </p>
-                            </div>
-                          </div>
-
-                          <div>
-                            <Label htmlFor="author">Author(s) *</Label>
-                            <Input
-                              id="author"
-                              name="author"
-                              value={submitFormData.author}
-                              onChange={handleSubmitInputChange}
-                              required
-                            />
+                            {descriptionError && <p className="text-red-500 text-sm mt-1">{descriptionError}</p>}
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                              <Label htmlFor="url_link">URL Link *</Label>
+                              <Label htmlFor="authors" className="mb-2 block">
+                                Author(s)
+                              </Label>
                               <Input
-                                id="url_link"
-                                name="url_link"
-                                type="url"
-                                value={submitFormData.url_link}
+                                id="authors"
+                                name="authors"
+                                value={submitFormData.authors}
                                 onChange={handleSubmitInputChange}
-                                required
+                                placeholder="e.g., John Smith, Jane Doe"
                               />
                             </div>
-
                             <div>
-                              <Label htmlFor="download_link">Download Link</Label>
+                              <Label htmlFor="url" className="mb-2 block">
+                                URL Link
+                              </Label>
                               <Input
-                                id="download_link"
-                                name="download_link"
+                                id="url"
+                                name="url"
                                 type="url"
-                                value={submitFormData.download_link}
+                                value={submitFormData.url}
                                 onChange={handleSubmitInputChange}
+                                placeholder="https://example.com"
                               />
                             </div>
+                          </div>
+
+                          <div>
+                            <Label htmlFor="download_link" className="mb-2 block">
+                              Download Link
+                            </Label>
+                            <Input
+                              id="download_link"
+                              name="download_link"
+                              type="url"
+                              value={submitFormData.download_link}
+                              onChange={handleSubmitInputChange}
+                              placeholder="https://example.com/download"
+                            />
                           </div>
                         </CollapsibleContent>
                       </Collapsible>
@@ -518,7 +512,7 @@ export default function ResourcesPage() {
                         </CollapsibleTrigger>
                         <CollapsibleContent className="pt-4">
                           <div>
-                            <Label>Tags</Label>
+                            <Label className="mb-2 block">Tags</Label>
                             <p className="text-sm text-gray-600 mb-3">
                               Select relevant tags to help others find your resource
                             </p>
@@ -549,7 +543,9 @@ export default function ResourcesPage() {
                         <CollapsibleContent className="space-y-6 pt-4">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                              <Label htmlFor="submitted_by">Your Name *</Label>
+                              <Label htmlFor="submitted_by" className="mb-2 block">
+                                Your Name *
+                              </Label>
                               <Input
                                 id="submitted_by"
                                 name="submitted_by"
@@ -558,9 +554,10 @@ export default function ResourcesPage() {
                                 required
                               />
                             </div>
-
                             <div>
-                              <Label htmlFor="date">Date</Label>
+                              <Label htmlFor="date" className="mb-2 block">
+                                Date
+                              </Label>
                               <Input
                                 id="date"
                                 name="date"
@@ -573,7 +570,9 @@ export default function ResourcesPage() {
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                              <Label htmlFor="submitter_email">Submitter E-Mail *</Label>
+                              <Label htmlFor="submitter_email" className="mb-2 block">
+                                Submitter E-Mail *
+                              </Label>
                               <Input
                                 id="submitter_email"
                                 name="submitter_email"
@@ -583,22 +582,20 @@ export default function ResourcesPage() {
                                 placeholder="your.email@example.com"
                                 required
                               />
-                              <p className="text-xs text-gray-500 mt-1">Your email will not be publicly visible</p>
+                              <p className="text-sm text-gray-600 mt-1">Your email will not be publicly visible</p>
                             </div>
-
                             <div>
-                              <Label htmlFor="linkedin_profile">LinkedIn Profile *</Label>
+                              <Label htmlFor="submitter_linkedin" className="mb-2 block">
+                                Submitter LinkedIn Profile
+                              </Label>
                               <Input
-                                id="linkedin_profile"
-                                name="linkedin_profile"
+                                id="submitter_linkedin"
+                                name="submitter_linkedin"
                                 type="url"
-                                value={submitFormData.linkedin_profile}
+                                value={submitFormData.submitter_linkedin}
                                 onChange={handleSubmitInputChange}
-                                placeholder="https://www.linkedin.com/in/yourname"
-                                required
-                                className={linkedinError ? "border-red-500" : ""}
+                                placeholder="https://linkedin.com/in/yourprofile"
                               />
-                              {linkedinError && <p className="text-red-500 text-sm mt-1">{linkedinError}</p>}
                             </div>
                           </div>
                         </CollapsibleContent>
@@ -612,7 +609,7 @@ export default function ResourcesPage() {
                             !!linkedinError ||
                             !!descriptionError ||
                             !isDescriptionValid ||
-                            !submitFormData.linkedin_profile.trim()
+                            !submitFormData.submitter_linkedin.trim()
                           }
                         >
                           {isSubmitting ? "Submitting..." : "Submit Resource"}
