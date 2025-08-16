@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { CardSubmissionFlow } from "@/components/card-submission-flow"
 import type { TagHierarchy } from "@/lib/db"
-import { Check, AlertTriangle, Globe } from "lucide-react"
+import { Check, Globe } from "lucide-react"
 
 export default function SubmitResourcePage() {
   const [showOpeningScreen, setShowOpeningScreen] = useState(true)
@@ -109,48 +109,6 @@ export default function SubmitResourcePage() {
                     <div key={index} className="flex items-center gap-3">
                       <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
                       <span className="text-gray-700">{item}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Warning section */}
-              <div className="mb-8">
-                <div className="flex items-center gap-2 mb-4">
-                  <AlertTriangle className="w-5 h-5 text-amber-600" />
-                  <h2 className="text-xl font-semibold text-gray-900">
-                    Please Confirm Your Resource Does NOT Include:
-                  </h2>
-                </div>
-                <div className="space-y-4">
-                  {[
-                    {
-                      title: "Commercial offers or product sales",
-                      description: "No promotional content, pricing pages, or direct sales materials",
-                    },
-                    {
-                      title: "Offensive or discriminatory content",
-                      description: "Content that targets or demeans any group based on age, race, gender, or ability",
-                    },
-                    {
-                      title: "Unverified medical advice",
-                      description: "Personal medical recommendations without proper credentials or peer review",
-                    },
-                    {
-                      title: "Spam or low-quality content",
-                      description: "Duplicate submissions, irrelevant links, or content unrelated to AgeTech/AI",
-                    },
-                    {
-                      title: "Copyright violations",
-                      description: "Content shared without proper permissions or attribution",
-                    },
-                  ].map((item, index) => (
-                    <div key={index} className="flex gap-3">
-                      <div className="w-2 h-2 bg-amber-400 rounded-full flex-shrink-0 mt-2" />
-                      <div>
-                        <div className="font-medium text-gray-900">{item.title}</div>
-                        <div className="text-sm text-gray-600">{item.description}</div>
-                      </div>
                     </div>
                   ))}
                 </div>
