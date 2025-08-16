@@ -235,12 +235,13 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
                       id={item.key}
                       checked={guidelinesConfirmed[item.key]}
                       onChange={() => handleGuidelineChange(item.key)}
-                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0"
+                      className="mt-1 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 flex-shrink-0 cursor-pointer"
+                      style={{ minWidth: "20px", minHeight: "20px" }}
                     />
                     <div className="flex-1 min-w-0">
                       <label
                         htmlFor={item.key}
-                        className="font-medium text-gray-900 cursor-pointer text-sm sm:text-base"
+                        className="font-medium text-gray-900 cursor-pointer text-sm sm:text-base block"
                       >
                         {item.title}
                       </label>
