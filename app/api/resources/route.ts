@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { sql } from "@/lib/db"
+import { sendResourceSubmissionNotification } from "@/lib/email"
 
 export async function GET(request: NextRequest) {
   try {
@@ -210,6 +211,18 @@ export async function POST(request: NextRequest) {
         `
       }
     }
+
+    await sendResourceSubmissionNotification({
+      id: resource.id,
+      title: resource.title,
+      description: resource.description,
+      author: resource["author/s"],
+      url_link: resource.url_link,
+      download_link: resource.download_link,
+      submitted_by: resource.submitted_by,
+      submitter_email: resource.submitter_email,
+      linkedin_profile: resource.linkedin_profile,
+    })
 
     return NextResponse.json(resource, { status: 201 })
   } catch (error) {
