@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect } from "react"
 import type { ResourceWithTags, Tag } from "@/lib/db"
 import { ResourceCard } from "@/components/resource-card"
@@ -12,9 +10,6 @@ import { ActiveFiltersBar } from "@/components/active-filters-bar"
 import { resourceStyles } from "@/lib/styles"
 import { Search, SortAsc, SortDesc, Filter, Grid3X3, List, Smartphone, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
-import type { TagHierarchy } from "@/lib/db"
-import { CardSubmissionFlow } from "@/components/card-submission-flow"
 
 export default function ResourcesPage() {
   const [resources, setResources] = useState<ResourceWithTags[]>([])
@@ -30,28 +25,6 @@ export default function ResourcesPage() {
   const [viewMode, setViewMode] = useState<"cards" | "list" | "compact">("list")
   const [showSearch, setShowSearch] = useState(false)
   const [showSort, setShowSort] = useState(false)
-  const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false)
-  const [submitFormData, setSubmitFormData] = useState({
-    submitted_by: "",
-    date: new Date().toISOString().split("T")[0],
-    title: "",
-    description: "",
-    authors: "",
-    url: "",
-    download_link: "",
-    submitter_linkedin: "",
-    submitter_email: "",
-  })
-  const [submitSelectedTags, setSubmitSelectedTags] = useState<number[]>([])
-  const [submitTagHierarchy, setSubmitTagHierarchy] = useState<TagHierarchy>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isSubmitted, setIsSubmitted] = useState(false)
-  const [linkedinError, setLinkedinError] = useState("")
-  const [descriptionError, setDescriptionError] = useState("")
-  const [submissionStep, setSubmissionStep] = useState<"guidelines" | "form">("guidelines")
-  const [resourceDetailsOpen, setResourceDetailsOpen] = useState(true)
-  const [resourceTagsOpen, setResourceTagsOpen] = useState(false)
-  const [submitterDetailsOpen, setSubmitterDetailsOpen] = useState(false)
 
   useEffect(() => {
     fetchTags()
@@ -66,12 +39,6 @@ export default function ResourcesPage() {
     const isMobile = window.innerWidth < 768 // Tailwind's md breakpoint
     setViewMode(isMobile ? "compact" : "list")
   }, [])
-
-  useEffect(() => {
-    if (isSubmitDialogOpen) {
-      fetchSubmitTags()
-    }
-  }, [isSubmitDialogOpen])
 
   const fetchResources = async () => {
     try {
@@ -135,27 +102,6 @@ export default function ResourcesPage() {
     }
   }
 
-  const fetchSubmitTags = async () => {
-    try {
-      const response = await fetch("/api/tags?public=true")
-      const data = await response.json()
-
-      if (data && data.hierarchy) {
-        // Filter to only show Thematic Topics
-        const filteredHierarchy: TagHierarchy = {}
-        if (data.hierarchy["Thematic Topics"]) {
-          filteredHierarchy["Thematic Topics"] = data.hierarchy["Thematic Topics"]
-        }
-        setSubmitTagHierarchy(filteredHierarchy)
-      } else {
-        setSubmitTagHierarchy({})
-      }
-    } catch (error) {
-      console.error("Error fetching submit tags:", error)
-      setSubmitTagHierarchy({})
-    }
-  }
-
   const toggleTag = (tagName: string) => {
     setSelectedTags((prev) => (prev.includes(tagName) ? prev.filter((t) => t !== tagName) : [...prev, tagName]))
   }
@@ -188,130 +134,6 @@ export default function ResourcesPage() {
     setShowSort(false)
   }
 
-  const validateLinkedInUrl = (url: string) => {
-    if (!url) return false // Now required, so empty is invalid
-    return url.includes("https://www.linkedin.com/in/")
-  }
-
-  const validateDescription = (description: string) => {
-    const length = description.length
-    if (length < 100) {
-      return "Description must be at least 100 characters"
-    }
-    if (length > 600) {
-      return "Description must not exceed 600 characters"
-    }
-    return ""
-  }
-
-  const handleSubmitInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setSubmitFormData((prev) => ({ ...prev, [name]: value }))
-
-    // Validate LinkedIn URL on change
-    if (name === "submitter_linkedin") {
-      if (!value) {
-        setLinkedinError("LinkedIn Profile URL is required")
-      } else if (!validateLinkedInUrl(value)) {
-        setLinkedinError("LinkedIn URL must include 'https://www.linkedin.com/in/'")
-      } else {
-        setLinkedinError("")
-      }
-    }
-
-    // Validate description on change
-    if (name === "description") {
-      const error = validateDescription(value)
-      setDescriptionError(error)
-    }
-  }
-
-  const handleSubmitTagChange = (tagId: number, checked: boolean) => {
-    setSubmitSelectedTags((prev) => (checked ? [...prev, tagId] : prev.filter((id) => id !== tagId)))
-  }
-
-  const handleCardSubmission = async (formData: any) => {
-    console.log("[v0] Starting card submission with data:", formData)
-
-    // Validation
-    if (formData.submitter_linkedin && !validateLinkedInUrl(formData.submitter_linkedin)) {
-      console.log("[v0] LinkedIn validation failed:", formData.submitter_linkedin)
-      return
-    }
-
-    const descError = validateDescription(formData.description)
-    if (descError) {
-      console.log("[v0] Description validation failed:", descError)
-      return
-    }
-
-    console.log("[v0] Validation passed, starting submission...")
-    setIsSubmitting(true)
-
-    try {
-      console.log("[v0] Making API request to /api/resources")
-      const response = await fetch("/api/resources", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      })
-
-      console.log("[v0] API response status:", response.status)
-      console.log("[v0] API response ok:", response.ok)
-
-      if (response.ok) {
-        console.log("[v0] Submission successful, setting isSubmitted to true")
-        setIsSubmitted(true)
-      } else {
-        const errorText = await response.text()
-        console.error("[v0] API error response:", errorText)
-        alert(`Submission failed: ${response.status} - ${errorText}`)
-      }
-    } catch (error) {
-      console.error("[v0] Network/fetch error:", error)
-      alert(`Submission failed: ${error instanceof Error ? error.message : "Unknown error"}`)
-    } finally {
-      console.log("[v0] Setting isSubmitting to false")
-      setIsSubmitting(false)
-    }
-  }
-
-  const handleDialogClose = () => {
-    setIsSubmitDialogOpen(false)
-    setIsSubmitted(false)
-    setLinkedinError("")
-    setDescriptionError("")
-    setSubmissionStep("guidelines")
-  }
-
-  const handleProceedToForm = () => {
-    setSubmissionStep("form")
-  }
-
-  const handleResourceDetailsToggle = (open: boolean) => {
-    setResourceDetailsOpen(open)
-    if (open) {
-      setResourceTagsOpen(false)
-      setSubmitterDetailsOpen(false)
-    }
-  }
-
-  const handleResourceTagsToggle = (open: boolean) => {
-    setResourceTagsOpen(open)
-    if (open) {
-      setResourceDetailsOpen(false)
-      setSubmitterDetailsOpen(false)
-    }
-  }
-
-  const handleSubmitterDetailsToggle = (open: boolean) => {
-    setSubmitterDetailsOpen(open)
-    if (open) {
-      setResourceDetailsOpen(false)
-      setResourceTagsOpen(false)
-    }
-  }
-
   // Count available tags for display
   const availableTagsCount = Object.values(tagHierarchy || {}).reduce((total, category: any) => {
     if (!category || !category.subcategories) return total
@@ -323,9 +145,6 @@ export default function ResourcesPage() {
       }, 0)
     )
   }, 0)
-
-  const descriptionLength = submitFormData.description.length
-  const isDescriptionValid = descriptionLength >= 100 && descriptionLength <= 600
 
   if (loading) {
     return (
@@ -394,38 +213,10 @@ export default function ResourcesPage() {
                   </span>
                 )}
               </button>
-              <Dialog open={isSubmitDialogOpen} onOpenChange={setIsSubmitDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="flex items-center gap-2">
-                    <Plus className="w-4 h-4" />
-                    Submit a Resource
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl bg-gray-50">
-                  {isSubmitted ? (
-                    <div className="text-center py-8">
-                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Thank you for your submission!</h3>
-                      <p className="text-gray-600 mb-4">
-                        Your resource is now under review. We'll review it and publish it to the public library once
-                        approved.
-                      </p>
-                      <Button onClick={handleDialogClose}>Close</Button>
-                    </div>
-                  ) : (
-                    <CardSubmissionFlow
-                      onSubmit={handleCardSubmission}
-                      onClose={handleDialogClose}
-                      tagHierarchy={submitTagHierarchy}
-                      isSubmitting={isSubmitting}
-                    />
-                  )}
-                </DialogContent>
-              </Dialog>
+              <Button className="flex items-center gap-2" onClick={() => (window.location.href = "/submit-resource")}>
+                <Plus className="w-4 h-4" />
+                Submit a Resource
+              </Button>
             </div>
           </div>
 

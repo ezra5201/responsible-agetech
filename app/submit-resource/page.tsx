@@ -49,22 +49,30 @@ export default function SubmitResourcePage() {
   }
 
   const handleCardSubmission = async (formData: any) => {
+    console.log("[v0] Starting card submission with data:", formData)
     setIsSubmitting(true)
 
     try {
+      console.log("[v0] Making API request to /api/resources")
       const response = await fetch("/api/resources", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       })
 
+      console.log("[v0] API response status:", response.status)
+
       if (response.ok) {
+        console.log("[v0] Submission successful")
         setIsSubmitted(true)
       } else {
-        console.error("Error submitting resource")
+        const errorText = await response.text()
+        console.error("[v0] API error response:", errorText)
+        alert(`Submission failed: ${response.status} - ${errorText}`)
       }
     } catch (error) {
-      console.error("Error submitting resource:", error)
+      console.error("[v0] Network/fetch error:", error)
+      alert(`Submission failed: ${error instanceof Error ? error.message : "Unknown error"}`)
     } finally {
       setIsSubmitting(false)
     }
@@ -178,12 +186,12 @@ export default function SubmitResourcePage() {
             <p className="text-gray-600 mb-6">
               Your resource is now under review. We'll review it and publish it to the public library once approved.
             </p>
-            <Button onClick={() => (window.location.href = "/")}>Return to Home</Button>
+            <Button onClick={() => (window.location.href = "/resources")}>Back to Resources</Button>
           </div>
         ) : (
           <CardSubmissionFlow
             onSubmit={handleCardSubmission}
-            onClose={() => (window.location.href = "/")}
+            onClose={() => (window.location.href = "/resources")}
             tagHierarchy={tagHierarchy}
             isSubmitting={isSubmitting}
           />
