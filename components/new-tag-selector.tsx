@@ -37,7 +37,9 @@ export function NewTagSelector({
   const [isHierarchyLoaded, setIsHierarchyLoaded] = useState(false)
 
   useEffect(() => {
-    setIsHierarchyLoaded(typeof hierarchy === "object")
+    const isValidHierarchy =
+      hierarchy && typeof hierarchy === "object" && !Array.isArray(hierarchy) && Object.keys(hierarchy).length >= 0
+    setIsHierarchyLoaded(isValidHierarchy)
     fetchCategories()
   }, [hierarchy])
 
@@ -172,6 +174,7 @@ export function NewTagSelector({
       )}
 
       {isHierarchyLoaded &&
+        hierarchy &&
         Object.entries(hierarchy).map(([categoryName, category]) => {
           const isCategoryExpanded = expandedCategories.has(categoryName)
 
