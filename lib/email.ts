@@ -3,17 +3,6 @@ import { neon } from "@neondatabase/serverless"
 
 const sql = neon(process.env.DATABASE_URL!)
 
-// Create transporter for Outlook SMTP
-const transporter = nodemailer.createTransporter({
-  host: "smtp-mail.outlook.com",
-  port: 587,
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-})
-
 export async function sendResourceSubmissionNotification(resourceData: {
   id: number
   title: string
@@ -26,6 +15,21 @@ export async function sendResourceSubmissionNotification(resourceData: {
   linkedin_profile?: string
 }) {
   try {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.log("[v0] Email credentials not configured, skipping notifications")
+      return
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: "smtp-mail.outlook.com",
+      port: 587,
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    })
+
     // Get all active reviewers with notifications enabled
     const reviewers = await sql`
       SELECT name, email 
