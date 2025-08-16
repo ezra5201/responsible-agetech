@@ -175,6 +175,8 @@ export function NewTagSelector({
 
       {isHierarchyLoaded &&
         hierarchy &&
+        typeof hierarchy === "object" &&
+        Object.keys(hierarchy).length > 0 &&
         Object.entries(hierarchy).map(([categoryName, category]) => {
           const isCategoryExpanded = expandedCategories.has(categoryName)
 
@@ -196,12 +198,12 @@ export function NewTagSelector({
                   <span className="font-semibold text-gray-900 text-lg">{categoryName}</span>
                 </div>
                 <span className="text-sm text-gray-500">
-                  {Object.keys(category.subcategories).length} subcategories
+                  {category.subcategories && Object.keys(category.subcategories).length} subcategories
                 </span>
               </button>
 
               {/* Subcategories */}
-              {isCategoryExpanded && (
+              {isCategoryExpanded && category.subcategories && (
                 <div className="border-t border-gray-200 bg-gray-50">
                   {Object.entries(category.subcategories).map(([subcategoryName, subcategory]) => {
                     const subcategoryKey = `${categoryName}-${subcategoryName}`
