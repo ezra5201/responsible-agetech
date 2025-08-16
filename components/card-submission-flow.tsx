@@ -358,7 +358,7 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
                 <p className="text-xs sm:text-sm text-gray-600 mb-2">
                   Select relevant tags to help others find your resource
                 </p>
-                {Object.keys(tagHierarchy).length > 0 ? (
+                {tagHierarchy && typeof tagHierarchy === "object" && Object.keys(tagHierarchy).length > 0 ? (
                   <div className="max-h-64 overflow-y-auto">
                     <NewTagSelector
                       hierarchy={tagHierarchy}
