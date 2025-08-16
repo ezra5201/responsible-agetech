@@ -231,33 +231,47 @@ export default function ResourcesPage() {
   }
 
   const handleCardSubmission = async (formData: any) => {
+    console.log("[v0] Starting card submission with data:", formData)
+
     // Validation
     if (formData.submitter_linkedin && !validateLinkedInUrl(formData.submitter_linkedin)) {
+      console.log("[v0] LinkedIn validation failed:", formData.submitter_linkedin)
       return
     }
 
     const descError = validateDescription(formData.description)
     if (descError) {
+      console.log("[v0] Description validation failed:", descError)
       return
     }
 
+    console.log("[v0] Validation passed, starting submission...")
     setIsSubmitting(true)
 
     try {
+      console.log("[v0] Making API request to /api/resources")
       const response = await fetch("/api/resources", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       })
 
+      console.log("[v0] API response status:", response.status)
+      console.log("[v0] API response ok:", response.ok)
+
       if (response.ok) {
+        console.log("[v0] Submission successful, setting isSubmitted to true")
         setIsSubmitted(true)
       } else {
-        console.error("Error submitting resource")
+        const errorText = await response.text()
+        console.error("[v0] API error response:", errorText)
+        alert(`Submission failed: ${response.status} - ${errorText}`)
       }
     } catch (error) {
-      console.error("Error submitting resource:", error)
+      console.error("[v0] Network/fetch error:", error)
+      alert(`Submission failed: ${error instanceof Error ? error.message : "Unknown error"}`)
     } finally {
+      console.log("[v0] Setting isSubmitting to false")
       setIsSubmitting(false)
     }
   }
