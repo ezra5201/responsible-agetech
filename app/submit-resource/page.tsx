@@ -146,7 +146,7 @@ export default function SubmitResourcePage() {
                     },
                   ].map((item, index) => (
                     <div key={index} className="flex gap-3">
-                      <div className="w-5 h-5 border-2 border-gray-300 rounded flex-shrink-0 mt-0.5" />
+                      <div className="w-2 h-2 bg-amber-400 rounded-full flex-shrink-0 mt-2" />
                       <div>
                         <div className="font-medium text-gray-900">{item.title}</div>
                         <div className="text-sm text-gray-600">{item.description}</div>
