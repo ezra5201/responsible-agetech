@@ -15,6 +15,11 @@ export async function sendResourceSubmissionNotification(resourceData: {
   linkedin_profile?: string
 }) {
   try {
+    console.log("[v0] Checking email credentials...")
+    console.log("[v0] EMAIL_USER exists:", !!process.env.EMAIL_USER)
+    console.log("[v0] EMAIL_PASS exists:", !!process.env.EMAIL_PASS)
+    console.log("[v0] SHARED_MAILBOX_EMAIL exists:", !!process.env.SHARED_MAILBOX_EMAIL)
+
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
       console.log("[v0] Email credentials not configured, skipping notifications")
       return
