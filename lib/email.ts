@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless"
+import * as crypto from "crypto"
 
 const sql = neon(process.env.DATABASE_URL!)
 
@@ -36,11 +37,7 @@ async function createAWSSignature(
     .map((key) => key.toLowerCase())
     .join(";")
 
-  const payloadHash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(body)).then((buffer) =>
-    Array.from(new Uint8Array(buffer))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join(""),
-  )
+  const payloadHash = crypto.createHash("sha256").update(body).digest("hex")
 
   const canonicalRequest = [method, "/", "", canonicalHeaders, signedHeaders, payloadHash].join("\n")
 
@@ -48,38 +45,16 @@ async function createAWSSignature(
     algorithm,
     date,
     credentialScope,
-    await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canonicalRequest)).then((buffer) =>
-      Array.from(new Uint8Array(buffer))
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join(""),
-    ),
+    crypto.createHash("sha256").update(canonicalRequest).digest("hex"),
   ].join("\n")
 
   // Create signing key
-  const kDate = await crypto.subtle
-    .importKey("raw", new TextEncoder().encode(`AWS4${secretKey}`), { name: "HMAC", hash: "SHA-256" }, false, ["sign"])
-    .then((key) => crypto.subtle.sign("HMAC", key, new TextEncoder().encode(dateStamp)))
+  const kDate = crypto.createHmac("sha256", `AWS4${secretKey}`).update(dateStamp).digest()
+  const kRegion = crypto.createHmac("sha256", kDate).update(region).digest()
+  const kService = crypto.createHmac("sha256", kRegion).update(service).digest()
+  const kSigning = crypto.createHmac("sha256", kService).update("aws4_request").digest()
 
-  const kRegion = await crypto.subtle
-    .importKey("raw", kDate, { name: "HMAC", hash: "SHA-256" }, false, ["sign"])
-    .then((key) => crypto.subtle.sign("HMAC", key, new TextEncoder().encode(region)))
-
-  const kService = await crypto.subtle
-    .importKey("raw", kRegion, { name: "HMAC", hash: "SHA-256" }, false, ["sign"])
-    .then((key) => crypto.subtle.sign("HMAC", key, new TextEncoder().encode(service)))
-
-  const kSigning = await crypto.subtle
-    .importKey("raw", kService, { name: "HMAC", hash: "SHA-256" }, false, ["sign"])
-    .then((key) => crypto.subtle.sign("HMAC", key, new TextEncoder().encode("aws4_request")))
-
-  const signature = await crypto.subtle
-    .importKey("raw", kSigning, { name: "HMAC", hash: "SHA-256" }, false, ["sign"])
-    .then((key) => crypto.subtle.sign("HMAC", key, new TextEncoder().encode(stringToSign)))
-    .then((buffer) =>
-      Array.from(new Uint8Array(buffer))
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join(""),
-    )
+  const signature = crypto.createHmac("sha256", kSigning).update(stringToSign).digest("hex")
 
   return `${algorithm} Credential=${accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`
 }
@@ -101,6 +76,9 @@ export async function sendResourceSubmissionNotification(resourceData: {
     console.log("[v0] AWS_SECRET_ACCESS_KEY exists:", !!process.env.AWS_SECRET_ACCESS_KEY)
     console.log("[v0] AWS_REGION exists:", !!process.env.AWS_REGION)
     console.log("[v0] SHARED_MAILBOX_EMAIL exists:", !!process.env.SHARED_MAILBOX_EMAIL)
+    console.log("[v0] AWS_REGION value:", process.env.AWS_REGION)
+    console.log("[v0] SHARED_MAILBOX_EMAIL value:", process.env.SHARED_MAILBOX_EMAIL)
+    console.log("[v0] AWS_SES_FROM_EMAIL value:", process.env.AWS_SES_FROM_EMAIL)
 
     if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY || !process.env.AWS_REGION) {
       console.log("[v0] AWS SES credentials not configured, skipping notifications")
@@ -157,6 +135,13 @@ export async function sendResourceSubmissionNotification(resourceData: {
     const region = process.env.AWS_REGION!
     const fromEmail =
       process.env.AWS_SES_FROM_EMAIL || process.env.SHARED_MAILBOX_EMAIL || "notifications@yourdomain.com"
+
+    console.log("[v0] FROM email address:", fromEmail)
+    console.log(
+      "[v0] TO email addresses:",
+      recipients.map((r) => r.email),
+    )
+    console.log("[v0] AWS SES endpoint:", `https://email.${region}.amazonaws.com/`)
 
     const sesEndpoint = `https://email.${region}.amazonaws.com/`
     const date =
@@ -230,6 +215,9 @@ export async function sendResourceSubmissionNotification(resourceData: {
       body,
     })
 
+    console.log("[v0] AWS SES response status:", response.status)
+    console.log("[v0] AWS SES response headers:", Object.fromEntries(response.headers.entries()))
+
     if (response.ok) {
       const result = await response.text()
       console.log(`[v0] Email notifications sent successfully via AWS SES to ${recipients.length} recipient(s)`)
@@ -237,12 +225,10 @@ export async function sendResourceSubmissionNotification(resourceData: {
     } else {
       const error = await response.text()
       console.error("[v0] Failed to send email via AWS SES:", error)
-
-      // Fallback: Log the notification details for manual processing
-      console.log("[v0] Email notification details (for manual processing):")
-      console.log("[v0] Recipients:", recipients.map((r) => r.email).join(", "))
-      console.log("[v0] Subject:", `New Resource Submission - ${resourceData.title}`)
-      console.log("[v0] Resource ID:", resourceData.id)
+      if (error.includes("MessageRejected") || error.includes("Email address not verified")) {
+        console.error("[v0] SANDBOX MODE ISSUE: Email address not verified in AWS SES")
+        console.error("[v0] In sandbox mode, both FROM and TO addresses must be verified")
+      }
     }
   } catch (error) {
     console.error("[v0] Failed to send email notifications:", error)
