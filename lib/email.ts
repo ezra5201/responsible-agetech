@@ -150,55 +150,25 @@ export async function sendResourceSubmissionNotification(resourceData: {
         .replace(/[:-]|\.\d{3}/g, "")
         .slice(0, 15) + "Z"
 
-    const emailParams = {
-      Source: fromEmail,
-      Destination: {
-        ToAddresses: recipients.map((r) => r.email),
-      },
-      Message: {
-        Subject: {
-          Data: `New Resource Submission - ${resourceData.title}`,
-          Charset: "UTF-8",
-        },
-        Body: {
-          Html: {
-            Data: emailHtml,
-            Charset: "UTF-8",
-          },
-        },
-      },
-    }
+    const params = new URLSearchParams()
+    params.append("Action", "SendEmail")
+    params.append("Version", "2010-12-01")
+    params.append("Source", fromEmail)
 
-    const body = new URLSearchParams({
-      Action: "SendEmail",
-      Version: "2010-12-01",
-      ...Object.fromEntries(
-        Object.entries(emailParams)
-          .flatMap(([key, value]) =>
-            typeof value === "object"
-              ? Object.entries(value)
-                  .map(([subKey, subValue]) => [
-                    `${key}.${subKey}`,
-                    typeof subValue === "object"
-                      ? Object.entries(subValue)
-                          .map(([subSubKey, subSubValue]) => [
-                            `${key}.${subKey}.${subSubKey}`,
-                            Array.isArray(subSubValue)
-                              ? subSubValue.map((item, index) => [
-                                  `${key}.${subKey}.${subSubKey}.member.${index + 1}`,
-                                  item,
-                                ])
-                              : [[`${key}.${subKey}.${subSubKey}`, subSubValue]],
-                          ])
-                          .flat(2)
-                      : [[`${key}.${subKey}`, subValue]],
-                  ])
-                  .flat(2)
-              : [[key, value]],
-          )
-          .flat(2),
-      ),
-    }).toString()
+    // Add recipients
+    recipients.forEach((recipient, index) => {
+      params.append(`Destination.ToAddresses.member.${index + 1}`, recipient.email)
+    })
+
+    // Add subject
+    params.append("Message.Subject.Data", `New Resource Submission - ${resourceData.title}`)
+    params.append("Message.Subject.Charset", "UTF-8")
+
+    // Add HTML body
+    params.append("Message.Body.Html.Data", emailHtml)
+    params.append("Message.Body.Html.Charset", "UTF-8")
+
+    const body = params.toString()
 
     const headers = {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -216,12 +186,10 @@ export async function sendResourceSubmissionNotification(resourceData: {
     })
 
     console.log("[v0] AWS SES response status:", response.status)
-    console.log("[v0] AWS SES response headers:", Object.fromEntries(response.headers.entries()))
 
     if (response.ok) {
       const result = await response.text()
       console.log(`[v0] Email notifications sent successfully via AWS SES to ${recipients.length} recipient(s)`)
-      console.log("[v0] SES Response:", result)
     } else {
       const error = await response.text()
       console.error("[v0] Failed to send email via AWS SES:", error)
