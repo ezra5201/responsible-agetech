@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { NewTagSelector } from "@/components/new-tag-selector"
 import { ChevronLeft, ChevronRight, Check } from "lucide-react"
 
 interface CardSubmissionFlowProps {
@@ -40,13 +39,12 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
   })
   const [guidelinesOpen, setGuidelinesOpen] = useState(false)
 
-  const totalCards = 7
+  const totalCards = 6
   const cardTitles = [
     "Welcome & Guidelines",
     "Guidelines Confirmation",
     "Resource Details",
     "Resource Links",
-    "Resource Tags",
     "Submitter Details",
     "Review & Submit",
   ]
@@ -75,10 +73,8 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
       case 4:
         return true // Links are optional
       case 5:
-        return true // Tags are optional
-      case 6:
         return !!(formData.submitted_by && formData.submitter_email)
-      case 7:
+      case 6:
         return true // Review card
       default:
         return false
@@ -166,7 +162,7 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
               </p>
               <div className="bg-blue-50 rounded-lg p-3 sm:p-4">
                 <p className="text-xs sm:text-sm text-gray-700">
-                  Welcome! You'll be guided through a simple 7-step process to submit your resource. Each step focuses
+                  Welcome! You'll be guided through a simple 6-step process to submit your resource. Each step focuses
                   on a specific aspect to make the process clear and manageable.
                 </p>
               </div>
@@ -350,31 +346,7 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
             </div>
           </div>
 
-          {/* Card 5: Resource Tags */}
-          <div className="w-full flex-shrink-0 px-2 sm:px-4">
-            <div className="space-y-2">
-              <div>
-                <Label className="mb-1 block text-sm">Tags</Label>
-                <p className="text-xs sm:text-sm text-gray-600 mb-2">
-                  Select relevant tags to help others find your resource
-                </p>
-                {tagHierarchy && typeof tagHierarchy === "object" && Object.keys(tagHierarchy).length > 0 ? (
-                  <div className="max-h-64 overflow-y-auto">
-                    <NewTagSelector
-                      hierarchy={tagHierarchy}
-                      selectedTags={selectedTags}
-                      onTagChange={handleTagChange}
-                      showAddTag={false}
-                    />
-                  </div>
-                ) : (
-                  <div className="text-xs sm:text-sm text-gray-500">Loading tags...</div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Card 6: Submitter Details */}
+          {/* Card 5: Submitter Details */}
           <div className="w-full flex-shrink-0 px-2 sm:px-4">
             <div className="space-y-2">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -441,7 +413,7 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
             </div>
           </div>
 
-          {/* Card 7: Review & Submit */}
+          {/* Card 6: Review & Submit */}
           <div className="w-full flex-shrink-0 px-2 sm:px-4">
             <div className="space-y-2">
               <div className="bg-white rounded-lg p-3 border border-gray-200 max-h-64 overflow-y-auto">
@@ -471,9 +443,6 @@ export function CardSubmissionFlow({ onSubmit, onClose, tagHierarchy, isSubmitti
                   </div>
                   <div>
                     <strong>LinkedIn:</strong> {formData.submitter_linkedin || "Not provided"}
-                  </div>
-                  <div>
-                    <strong>Tags:</strong> {selectedTags.length} selected
                   </div>
                 </div>
               </div>
