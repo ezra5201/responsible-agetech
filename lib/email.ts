@@ -20,6 +20,8 @@ export async function sendResourceSubmissionNotification(resourceData: {
       return
     }
 
+    const sharedMailbox = process.env.SHARED_MAILBOX_EMAIL
+
     const transporter = nodemailer.createTransport({
       host: "smtp-mail.outlook.com",
       port: 587,
@@ -30,15 +32,23 @@ export async function sendResourceSubmissionNotification(resourceData: {
       },
     })
 
-    // Get all active reviewers with notifications enabled
-    const reviewers = await sql`
-      SELECT name, email 
-      FROM reviewers 
-      WHERE is_active = true AND notification_enabled = true
-    `
+    let recipients = []
 
-    if (reviewers.length === 0) {
-      console.log("[v0] No active reviewers found for notifications")
+    if (sharedMailbox) {
+      recipients = [{ name: "Review Team", email: sharedMailbox }]
+      console.log("[v0] Using shared mailbox for notifications")
+    } else {
+      const reviewers = await sql`
+        SELECT name, email 
+        FROM reviewers 
+        WHERE is_active = true AND notification_enabled = true
+      `
+      recipients = reviewers
+      console.log("[v0] Using individual reviewer notifications")
+    }
+
+    if (recipients.length === 0) {
+      console.log("[v0] No recipients found for notifications")
       return
     }
 
@@ -68,18 +78,17 @@ export async function sendResourceSubmissionNotification(resourceData: {
       <p><em>Submitted at: ${new Date().toLocaleString()}</em></p>
     `
 
-    // Send email to all active reviewers
-    const emailPromises = reviewers.map((reviewer) =>
+    const emailPromises = recipients.map((recipient) =>
       transporter.sendMail({
         from: process.env.EMAIL_USER,
-        to: reviewer.email,
+        to: recipient.email,
         subject: `New Resource Submission - ${resourceData.title}`,
         html: emailHtml,
       }),
     )
 
     await Promise.all(emailPromises)
-    console.log(`[v0] Email notifications sent to ${reviewers.length} reviewers`)
+    console.log(`[v0] Email notifications sent to ${recipients.length} recipient(s)`)
   } catch (error) {
     console.error("[v0] Failed to send email notifications:", error)
     // Don't throw error - email failure shouldn't break submission
