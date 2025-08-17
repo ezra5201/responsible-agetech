@@ -5,10 +5,8 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { CardSubmissionFlow } from "@/components/card-submission-flow"
 import type { TagHierarchy } from "@/lib/db"
-import { Check, Globe } from "lucide-react"
 
 export default function SubmitResourcePage() {
-  const [showOpeningScreen, setShowOpeningScreen] = useState(true)
   const [formData, setFormData] = useState({
     submitted_by: "",
     date: new Date().toISOString().split("T")[0],
@@ -76,58 +74,6 @@ export default function SubmitResourcePage() {
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  console.log("showOpeningScreen:", showOpeningScreen)
-
-  if (showOpeningScreen) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-2xl mx-auto px-4">
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            {/* Header with gradient background */}
-            <div className="bg-gradient-to-r from-blue-500 to-cyan-400 px-8 py-12 text-center text-white">
-              <h1 className="text-3xl font-bold mb-2">Thank You for Contributing!</h1>
-              <p className="text-blue-100 text-lg">Help build our global resource library</p>
-            </div>
-
-            <div className="p-8">
-              {/* Welcome section */}
-              <div className="mb-8">
-                <div className="flex items-center gap-2 mb-4">
-                  <Globe className="w-5 h-5 text-blue-600" />
-                  <h2 className="text-xl font-semibold text-gray-900">We Welcome Resources That Are:</h2>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-6 space-y-3">
-                  {[
-                    "In any language",
-                    "Any media type (articles, videos, podcasts, tools)",
-                    "Research, case studies, or practical guides",
-                    "Educational or informational content",
-                    "Open source tools and frameworks",
-                  ].map((item, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                      <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
-                      <span className="text-gray-700">{item}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Proceed button */}
-              <div className="text-center">
-                <Button
-                  onClick={() => setShowOpeningScreen(false)}
-                  className="bg-gray-600 hover:bg-gray-700 text-white px-8 py-3 text-lg"
-                >
-                  Proceed to Resource Submission
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   return (
