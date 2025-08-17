@@ -46,52 +46,60 @@ export async function sendResourceSubmissionNotification(resourceData: {
       return
     }
 
-    const emailContent = {
-      message: {
-        subject: `New Resource Submission - ${resourceData.title}`,
-        body: {
-          contentType: "HTML",
-          content: `
-            <h2>New Resource Submission</h2>
-            <p>A new resource has been submitted and is awaiting review.</p>
-            
-            <h3>Resource Details:</h3>
-            <ul>
-              <li><strong>Title:</strong> ${resourceData.title}</li>
-              <li><strong>Author(s):</strong> ${resourceData.author}</li>
-              <li><strong>Description:</strong> ${resourceData.description}</li>
-              ${resourceData.url_link ? `<li><strong>URL:</strong> <a href="${resourceData.url_link}">${resourceData.url_link}</a></li>` : ""}
-              ${resourceData.download_link ? `<li><strong>Download:</strong> <a href="${resourceData.download_link}">${resourceData.download_link}</a></li>` : ""}
-            </ul>
-            
-            <h3>Submitter Information:</h3>
-            <ul>
-              <li><strong>Name:</strong> ${resourceData.submitted_by}</li>
-              <li><strong>Email:</strong> ${resourceData.submitter_email}</li>
-              ${resourceData.linkedin_profile ? `<li><strong>LinkedIn:</strong> <a href="${resourceData.linkedin_profile}">${resourceData.linkedin_profile}</a></li>` : ""}
-            </ul>
-            
-            <p><a href="${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/admin">Review in Admin Panel</a></p>
-            
-            <p><em>Submitted at: ${new Date().toLocaleString()}</em></p>
-          `,
-        },
-        toRecipients: recipients.map((recipient) => ({
-          emailAddress: {
-            address: recipient.email,
-            name: recipient.name || recipient.email,
-          },
-        })),
+    const emailHtml = `
+      <h2>New Resource Submission</h2>
+      <p>A new resource has been submitted and is awaiting review.</p>
+      
+      <h3>Resource Details:</h3>
+      <ul>
+        <li><strong>Title:</strong> ${resourceData.title}</li>
+        <li><strong>Author(s):</strong> ${resourceData.author}</li>
+        <li><strong>Description:</strong> ${resourceData.description}</li>
+        ${resourceData.url_link ? `<li><strong>URL:</strong> <a href="${resourceData.url_link}">${resourceData.url_link}</a></li>` : ""}
+        ${resourceData.download_link ? `<li><strong>Download:</strong> <a href="${resourceData.download_link}">${resourceData.download_link}</a></li>` : ""}
+      </ul>
+      
+      <h3>Submitter Information:</h3>
+      <ul>
+        <li><strong>Name:</strong> ${resourceData.submitted_by}</li>
+        <li><strong>Email:</strong> ${resourceData.submitter_email}</li>
+        ${resourceData.linkedin_profile ? `<li><strong>LinkedIn:</strong> <a href="${resourceData.linkedin_profile}">${resourceData.linkedin_profile}</a></li>` : ""}
+      </ul>
+      
+      <p><a href="${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/admin">Review in Admin Panel</a></p>
+      
+      <p><em>Submitted at: ${new Date().toLocaleString()}</em></p>
+    `
+
+    // Use Resend API for serverless-compatible email sending
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        from: `Resource Notifications <notifications@${process.env.RESEND_DOMAIN || "resend.dev"}>`,
+        to: recipients.map((r) => r.email),
+        subject: `New Resource Submission - ${resourceData.title}`,
+        html: emailHtml,
+      }),
+    })
+
+    if (response.ok) {
+      const result = await response.json()
+      console.log(`[v0] Email notifications sent successfully to ${recipients.length} recipient(s)`)
+      console.log("[v0] Email ID:", result.id)
+    } else {
+      const error = await response.text()
+      console.error("[v0] Failed to send email via Resend:", error)
+
+      // Fallback: Log the notification details for manual processing
+      console.log("[v0] Email notification details (for manual processing):")
+      console.log("[v0] Recipients:", recipients.map((r) => r.email).join(", "))
+      console.log("[v0] Subject:", `New Resource Submission - ${resourceData.title}`)
+      console.log("[v0] Resource ID:", resourceData.id)
     }
-
-    console.log("[v0] Email notification prepared for:", recipients.length, "recipient(s)")
-    console.log("[v0] Email subject:", emailContent.message.subject)
-    console.log("[v0] Recipients:", recipients.map((r) => r.email).join(", "))
-
-    // TODO: Implement actual email sending with a serverless-compatible service
-    // For now, just log success to prevent the DNS error
-    console.log(`[v0] Email notifications logged for ${recipients.length} recipient(s)`)
   } catch (error) {
     console.error("[v0] Failed to send email notifications:", error)
     // Don't throw error - email failure shouldn't break submission
